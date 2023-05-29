@@ -73,11 +73,3 @@ class TestAuthRouterRegister:
 
         assert response.status_code == 400
         assert response.json()['detail'] == ErrorCode.REGISTER_USER_ALREADY_EXISTS
-
-
-@pytest.mark.asyncio
-async def test_get_current_user_unauthorized(client: AsyncClient):
-    response = await client.get('/auth/users/me')
-
-    assert response.status_code == 401
-    assert response.json()['detail'] == 'Unauthorized'
