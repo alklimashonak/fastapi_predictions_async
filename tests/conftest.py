@@ -21,11 +21,9 @@ logger = logging.getLogger('tests')
 
 metadata = User.metadata
 
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./predictions_test.db"
+SQLALCHEMY_DATABASE_URL = settings.TEST_DATABASE_URL_POSTGRES
 
-async_engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL)
 
 async_session = async_sessionmaker(async_engine, expire_on_commit=False)
 
@@ -80,7 +78,8 @@ async def prepare_database():
         await conn.run_sync(metadata.create_all)
     yield
     async with async_engine.begin() as conn:
-        await conn.run_sync(metadata.drop_all)
+        pass
+        #await conn.run_sync(metadata.drop_all)
 
 
 @pytest_asyncio.fixture(scope='function')
