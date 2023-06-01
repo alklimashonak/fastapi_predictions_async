@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from src.database import get_async_session
-from src.events import service
+from src.auth.config import get_superuser
 from src.events.dependencies import get_event_db
 from src.events.schemas import EventSchema, EventCreate, EventUpdate
 from src.events.service import EventDatabase
@@ -24,11 +22,22 @@ async def get_event(event_id: int, event_db: EventDatabase = Depends(get_event_d
     return event
 
 
-@router.post('', response_model=EventSchema)
-async def create_event(event: EventCreate, event_db: EventDatabase = Depends(get_event_db)):
+@router.post('', response_model=EventSchema, dependencies=[Depends(get_superuser)])
+async def create_event(
+        event: EventCreate,
+        event_db: EventDatabase = Depends(get_event_db)
+):
     return await event_db.create_event(event=event)
 
 
-@router.put('', response_model=EventSchema)
+@router.put('/{event_id}', response_model=EventSchema, dependencies=[Depends(get_superuser)])
 async def update_event(updated_event: EventUpdate, event_id: int, event_db: EventDatabase = Depends(get_event_db)):
     return await event_db.update_event(updated_event=updated_event, event_id=event_id)
+
+
+@router.delete('/{event_id}', response_model=EventSchema, dependencies=[Depends(get_superuser)])
+async def delete_event(
+        event_id: int,
+        event_db: EventDatabase = Depends(get_event_db)
+):
+    return await event_db.delete_event(event_id=event_id)
