@@ -45,6 +45,12 @@ class EventDatabase:
         await self.session.commit()
         return await self.get_event_by_id(event_id=event_id)
 
+    async def delete_event(self, event_id: int) -> Event:
+        event = await self.get_event_by_id(event_id=event_id)
+        stmt = delete(Event).where(Event.id == event_id)
+        await self.session.execute(stmt)
+        return event
+
     async def _create_match(self, match: MatchCreate, event_id: int) -> None:
         stmt = insert(Match).values(**match.dict(), event_id=event_id)
         await self.session.execute(stmt)
