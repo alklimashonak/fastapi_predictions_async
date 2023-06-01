@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import logging
+from datetime import datetime
 
 import pytest
 import pytest_asyncio
@@ -13,17 +14,18 @@ from src.auth.dependencies import get_user_db
 from src.auth.manager import get_user_manager
 from src.auth.schemas import UserCreate
 from src.config import settings
-from src.database import get_async_session
+from src.database import get_async_session, Base
+from src.events.dependencies import get_event_db
+from src.events.schemas import EventCreate, MatchCreate
 from src.main import app
 from src.auth.models import User
+from src.events.models import Event, Match  # noqa
 
 logger = logging.getLogger('tests')
 
-metadata = User.metadata
+metadata = Base.metadata
 
-SQLALCHEMY_DATABASE_URL = settings.TEST_DATABASE_URL_POSTGRES
-
-async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL)
+async_engine = create_async_engine(settings.TEST_DATABASE_URL_POSTGRES)
 
 async_session = async_sessionmaker(async_engine, expire_on_commit=False)
 
@@ -37,7 +39,26 @@ app.dependency_overrides[get_async_session] = override_get_db
 
 get_async_session_context = contextlib.asynccontextmanager(override_get_db)
 get_user_db_context = contextlib.asynccontextmanager(get_user_db)
+get_event_db_context = contextlib.asynccontextmanager(get_event_db)
 get_user_manager_context = contextlib.asynccontextmanager(get_user_manager)
+
+
+@pytest_asyncio.fixture
+async def event_db():
+    async with get_async_session_context() as session:
+        async with get_event_db_context(session) as db:
+            yield db
+
+
+async def create_event(name: str, matches: list[MatchCreate]):
+    async with get_async_session_context() as session:
+        async with get_event_db_context(session) as db:
+            event = EventCreate(
+                name=name,
+                start_time=datetime.utcnow(),
+                matches=matches
+            )
+            return await db.create_event(event=event)
 
 
 async def get_user_manager():
@@ -78,23 +99,38 @@ async def prepare_database():
         await conn.run_sync(metadata.create_all)
     yield
     async with async_engine.begin() as conn:
-        pass
-        #await conn.run_sync(metadata.drop_all)
+        await conn.run_sync(metadata.drop_all)
 
 
-@pytest_asyncio.fixture(scope='function')
+@pytest_asyncio.fixture(scope='class')
 async def client():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
 
 
 @pytest_asyncio.fixture(scope='class')
-async def manager():
-    user_manager = await get_user_manager()
-    return user_manager
-
-
-@pytest_asyncio.fixture(scope='class')
 async def test_user() -> User:
     user = await create_user(email=settings.TEST_USER_EMAIL, password=settings.TEST_USER_PASSWORD)
     return user
+
+
+@pytest_asyncio.fixture(scope='function')
+async def test_session():
+    async with async_session() as session:
+        yield session
+
+
+@pytest_asyncio.fixture(scope='function')
+async def test_event():
+    name = '1st event'
+    matches = [
+        MatchCreate(
+            team1='Aston Villa',
+            team2='Chelsea',
+            status=0,
+            team1_goals=None,
+            team2_goals=None,
+            start_time=datetime.utcnow()
+        )
+    ]
+    return await create_event(name=name, matches=matches)
