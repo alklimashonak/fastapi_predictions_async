@@ -64,6 +64,15 @@ async def test_can_update_event_name(test_event: Event, event_db: EventDatabase)
 
 
 @pytest.mark.asyncio
+async def test_can_delete_event(test_event: Event, event_db: EventDatabase) -> None:
+    await event_db.delete_event(event_id=test_event.id)
+
+    deleted_event = await event_db.get_event_by_id(event_id=test_event.id)
+
+    assert not deleted_event
+
+
+@pytest.mark.asyncio
 async def test_can_create_match(test_event: EventSchema, event_db: EventDatabase) -> None:
     data = MatchCreate(
         team1='1st team',
