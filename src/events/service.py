@@ -1,8 +1,8 @@
-from sqlalchemy import select, insert, delete, update, Row, Result
+from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.events.models import Event, Match
+from src.events.models import Event, Match, EP
 from src.events.schemas import EventCreate, MatchCreate, EventUpdate
 
 
@@ -15,12 +15,12 @@ class EventDatabase:
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    async def get_event_by_id(self, event_id: int) -> Event:
+    async def get_event_by_id(self, event_id: int) -> EP | None:
         stmt = select(Event).where(Event.id == event_id).options(selectinload(Event.matches))
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def create_event(self, event: EventCreate) -> Event:
+    async def create_event(self, event: EventCreate) -> EP | None:
         stmt = insert(Event).values(**event.dict(exclude={'matches'})).returning(Event.id)
         result = await self.session.execute(stmt)
         event_id = result.scalar_one_or_none()
@@ -29,7 +29,7 @@ class EventDatabase:
         await self.session.commit()
         return await self.get_event_by_id(event_id=event_id)
 
-    async def update_event(self, updated_event: EventUpdate, event_id: int) -> Event:
+    async def update_event(self, updated_event: EventUpdate, event_id: int) -> EP | None:
         for match_id in updated_event.matches_to_delete:
             await self._delete_match(match_id=match_id)
 
@@ -45,7 +45,7 @@ class EventDatabase:
         await self.session.commit()
         return await self.get_event_by_id(event_id=event_id)
 
-    async def delete_event(self, event_id: int) -> Event:
+    async def delete_event(self, event_id: int) -> EP | None:
         event = await self.get_event_by_id(event_id=event_id)
         stmt = delete(Event).where(Event.id == event_id)
         await self.session.execute(stmt)

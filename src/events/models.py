@@ -1,10 +1,35 @@
+import datetime
 import enum
+from typing import Protocol, TypeVar
 
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import ENUM as pgEnum
 
 from src.database import Base
+
+
+class MatchProtocol(Protocol):
+    id: int
+    team1: str
+    team2: str
+    status: int
+    team1_goals: int
+    team2_goals: int
+    start_time: datetime.datetime
+
+
+MP = TypeVar('MP', bound=MatchProtocol)
+
+
+class EventProtocol(Protocol):
+    id: int
+    name: str
+    start_time: datetime.datetime
+    matches: list[MP]
+
+
+EP = TypeVar('EP', bound=EventProtocol)
 
 
 class Event(Base):
