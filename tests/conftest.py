@@ -61,16 +61,6 @@ async def create_event(name: str, matches: list[MatchCreate]):
             return await db.create_event(event=event)
 
 
-async def get_user_manager():
-    try:
-        async with get_async_session_context() as session:
-            async with get_user_db_context(session) as user_db:
-                async with get_user_manager_context(user_db) as user_manager:
-                    return user_manager
-    except Exception:
-        logger.warning('Something wrong to get manager')
-
-
 async def create_user(email: str, password: str, is_superuser: bool = False):
     try:
         async with get_async_session_context() as session:
@@ -128,8 +118,6 @@ async def test_event():
             team1='Aston Villa',
             team2='Chelsea',
             status=0,
-            team1_goals=None,
-            team2_goals=None,
             start_time=datetime.utcnow()
         )
     ]

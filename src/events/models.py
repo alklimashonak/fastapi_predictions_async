@@ -1,9 +1,9 @@
-import datetime
 import enum
 from typing import Protocol, TypeVar
+from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM as pgEnum
 
 from src.database import Base
@@ -16,7 +16,7 @@ class MatchProtocol(Protocol):
     status: int
     team1_goals: int
     team2_goals: int
-    start_time: datetime.datetime
+    start_time: datetime
 
 
 MP = TypeVar('MP', bound=MatchProtocol)
@@ -25,21 +25,11 @@ MP = TypeVar('MP', bound=MatchProtocol)
 class EventProtocol(Protocol):
     id: int
     name: str
-    start_time: datetime.datetime
+    start_time: datetime
     matches: list[MP]
 
 
 EP = TypeVar('EP', bound=EventProtocol)
-
-
-class Event(Base):
-    __tablename__ = 'events'
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(128), nullable=False)
-    start_time = Column(DateTime(timezone=True))
-
-    matches = relationship('Match', cascade='all,delete-orphan', backref='event')
 
 
 class MatchStatus(enum.IntEnum):
@@ -48,15 +38,32 @@ class MatchStatus(enum.IntEnum):
     finished = 2
 
 
+class EventStatus(enum.IntEnum):
+    not_started = 0
+    in_process = 1
+    finished = 2
+
+
+class Event(Base):
+    __tablename__ = 'events'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[EventStatus] = mapped_column(pgEnum(EventStatus), default=EventStatus.not_started, nullable=False)
+    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    matches: Mapped[list['Match']] = relationship('Match', cascade='all,delete-orphan', backref='event')
+
+
 class Match(Base):
     __tablename__ = 'matches'
 
-    id = Column(Integer, primary_key=True, index=True)
-    team1 = Column(String(128), nullable=False)
-    team2 = Column(String(128), nullable=False)
-    status = Column(pgEnum(MatchStatus), default=MatchStatus.not_started, nullable=False)
-    team1_goals = Column(Integer, nullable=True, default=None)
-    team2_goals = Column(Integer, nullable=True, default=None)
-    start_time = Column(DateTime(timezone=True))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    team1: Mapped[str] = mapped_column(String(128), nullable=False)
+    team2: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[MatchStatus] = mapped_column(pgEnum(MatchStatus), default=MatchStatus.not_started, nullable=False)
+    team1_goals: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
+    team2_goals: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
+    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
-    event_id = Column(Integer, ForeignKey('events.id', ondelete='CASCADE'))
+    event_id: Mapped[int] = mapped_column(Integer, ForeignKey('events.id', ondelete='CASCADE'))

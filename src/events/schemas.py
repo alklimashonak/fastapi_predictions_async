@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class EventBase(BaseModel):
     name: str | None = None
+    status: int | None = None
     start_time: datetime | None = None
 
 
@@ -26,16 +27,29 @@ class MatchCreate(MatchBase):
     start_time: datetime
 
 
+class MatchUpdate(MatchBase):
+    id: int
+    team1: str = Field(max_length=128)
+    team2: str = Field(max_length=128)
+    status: int = Field(default=0)
+    team1_goals: int | None = None
+    team2_goals: int | None = None
+    start_time: datetime
+
+
 class EventCreate(EventBase):
     name: str = Field(max_length=128)
+    status: int = Field(default=0)
     start_time: datetime
     matches: list[MatchCreate] = []
 
 
 class EventUpdate(EventBase):
     name: str = Field(max_length=128)
+    status: int = Field(default=0)
     start_time: datetime
-    matches: list[MatchCreate] = []
+    new_matches: list[MatchCreate] = []
+    matches_to_update: list[MatchUpdate] = []
     matches_to_delete: list[int] = []
 
 
@@ -55,6 +69,7 @@ class MatchSchema(MatchBase):
 class EventSchema(EventBase):
     id: int
     name: str
+    status: int
     start_time: datetime
     matches: list[MatchSchema]
 

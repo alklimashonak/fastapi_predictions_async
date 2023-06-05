@@ -10,12 +10,17 @@ router = APIRouter()
 
 
 @router.get('', response_model=list[EventSchema])
-async def get_events(event_db: EventDatabase = Depends(get_event_db)):
+async def get_events(
+        event_db: EventDatabase = Depends(get_event_db)
+):
     return await event_db.get_events()
 
 
 @router.get('/{event_id}', response_model=EventSchema)
-async def get_event(event_id: int, event_db: EventDatabase = Depends(get_event_db)):
+async def get_event(
+        event_id: int,
+        event_db: EventDatabase = Depends(get_event_db)
+):
     event = await event_db.get_event_by_id(event_id=event_id)
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
@@ -31,7 +36,11 @@ async def create_event(
 
 
 @router.put('/{event_id}', response_model=EventSchema, dependencies=[Depends(get_superuser)])
-async def update_event(updated_event: EventUpdate, event_id: int, event_db: EventDatabase = Depends(get_event_db)):
+async def update_event(
+        updated_event: EventUpdate,
+        event_id: int,
+        event_db: EventDatabase = Depends(get_event_db)
+):
     return await event_db.update_event(updated_event=updated_event, event_id=event_id)
 
 
