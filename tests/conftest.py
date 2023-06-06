@@ -15,8 +15,6 @@ from src.auth.manager import get_user_manager
 from src.auth.schemas import UserCreate
 from src.config import settings
 from src.database import get_async_session, Base
-from src.events.dependencies import get_event_db
-from src.events.schemas import EventCreate, MatchCreate
 from src.main import app
 from src.auth.models import User
 from src.events.models import Event, Match  # noqa
@@ -39,26 +37,7 @@ app.dependency_overrides[get_async_session] = override_get_db
 
 get_async_session_context = contextlib.asynccontextmanager(override_get_db)
 get_user_db_context = contextlib.asynccontextmanager(get_user_db)
-get_event_db_context = contextlib.asynccontextmanager(get_event_db)
 get_user_manager_context = contextlib.asynccontextmanager(get_user_manager)
-
-
-@pytest_asyncio.fixture
-async def event_db():
-    async with get_async_session_context() as session:
-        async with get_event_db_context(session) as db:
-            yield db
-
-
-async def create_event(name: str, matches: list[MatchCreate]):
-    async with get_async_session_context() as session:
-        async with get_event_db_context(session) as db:
-            event = EventCreate(
-                name=name,
-                start_time=datetime.utcnow(),
-                matches=matches
-            )
-            return await db.create_event(event=event)
 
 
 async def create_user(email: str, password: str, is_superuser: bool = False):
@@ -108,17 +87,3 @@ async def test_user() -> User:
 async def test_session():
     async with async_session() as session:
         yield session
-
-
-@pytest_asyncio.fixture(scope='function')
-async def test_event():
-    name = '1st event'
-    matches = [
-        MatchCreate(
-            team1='Aston Villa',
-            team2='Chelsea',
-            status=0,
-            start_time=datetime.utcnow()
-        )
-    ]
-    return await create_event(name=name, matches=matches)
