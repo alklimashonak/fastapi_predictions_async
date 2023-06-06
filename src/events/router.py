@@ -37,11 +37,11 @@ async def create_event(
 
 @router.put('/{event_id}', response_model=EventSchema, dependencies=[Depends(get_superuser)])
 async def update_event(
-        updated_event: EventUpdate,
+        event: EventUpdate,
         event_id: int,
         event_db: EventDatabase = Depends(get_event_db)
 ):
-    return await event_db.update_event(updated_event=updated_event, event_id=event_id)
+    return await event_db.update_event(event=event, event_id=event_id)
 
 
 @router.delete('/{event_id}', response_model=EventSchema, dependencies=[Depends(get_superuser)])

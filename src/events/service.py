@@ -2,8 +2,8 @@ from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.events.models import Event, Match, EP
-from src.events.schemas import EventCreate, MatchCreate, EventUpdate
+from src.events.models import Event, Match, EP, MP
+from src.events.schemas import EventCreate, MatchCreate, EventUpdate, MatchUpdate
 
 
 class EventDatabase:
@@ -24,36 +24,52 @@ class EventDatabase:
         stmt = insert(Event).values(**event.dict(exclude={'matches'})).returning(Event.id)
         result = await self.session.execute(stmt)
         event_id = result.scalar_one_or_none()
+
         for match in event.matches:
             await self._create_match(match=match, event_id=event_id)
+
         await self.session.commit()
         return await self.get_event_by_id(event_id=event_id)
 
-    async def update_event(self, updated_event: EventUpdate, event_id: int) -> EP | None:
-        for match_id in updated_event.matches_to_delete:
-            await self._delete_match(match_id=match_id)
-
+    async def update_event(self, event: EventUpdate, event_id: int) -> EP | None:
         stmt = update(Event) \
             .where(Event.id == event_id) \
-            .values(**updated_event.dict(exclude={'matches', 'matches_to_delete'})) \
-            .returning(Event.id)
+            .values(**event.dict(exclude={'new_matches', 'matches_to_update', 'matches_to_delete'}))
         await self.session.execute(stmt)
 
-        for match in updated_event.matches:
+        for match in event.new_matches:
             await self._create_match(match=match, event_id=event_id)
+
+        for match in event.matches_to_update:
+            await self._update_match(match=match)
+
+        for match_id in event.matches_to_delete:
+            await self._delete_match(match_id=match_id)
 
         await self.session.commit()
         return await self.get_event_by_id(event_id=event_id)
 
-    async def delete_event(self, event_id: int) -> EP | None:
+    async def delete_event(self, event_id: int) -> None:
         event = await self.get_event_by_id(event_id=event_id)
         stmt = delete(Event).where(Event.id == event_id)
         await self.session.execute(stmt)
-        return event
 
-    async def _create_match(self, match: MatchCreate, event_id: int) -> None:
-        stmt = insert(Match).values(**match.dict(), event_id=event_id)
-        await self.session.execute(stmt)
+    async def _get_match_by_id(self, match_id: int) -> MP | None:
+        stmt = select(Match).where(Match.id == match_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def _create_match(self, match: MatchCreate, event_id: int) -> MP | None:
+        stmt = insert(Match).values(**match.dict(), event_id=event_id).returning(Match.id)
+        result = await self.session.execute(stmt)
+
+        return await self._get_match_by_id(match_id=result.scalar_one_or_none())
+
+    async def _update_match(self, match: MatchUpdate) -> MP | None:
+        stmt = update(Match).where(Match.id == match.id).values(**match.dict()).returning(Match.id)
+        result = await self.session.execute(stmt)
+
+        return await self._get_match_by_id(match_id=result.scalar_one_or_none())
 
     async def _delete_match(self, match_id: int) -> None:
         stmt = delete(Match).where(Match.id == match_id)

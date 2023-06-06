@@ -2,7 +2,7 @@ import enum
 from typing import Protocol, TypeVar
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM as pgEnum
 
@@ -25,6 +25,7 @@ MP = TypeVar('MP', bound=MatchProtocol)
 class EventProtocol(Protocol):
     id: int
     name: str
+    status: int
     start_time: datetime
     matches: list[MP]
 
