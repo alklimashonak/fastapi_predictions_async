@@ -17,6 +17,7 @@ class MatchProtocol(Protocol):
     team1_goals: int
     team2_goals: int
     start_time: datetime
+    event_id: int
 
 
 MP = TypeVar('MP', bound=MatchProtocol)

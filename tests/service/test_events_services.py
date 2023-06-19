@@ -1,8 +1,9 @@
 from datetime import datetime
+from datetime import timezone
 
 import pytest
 
-from src.events.models import EP, EventStatus, MatchStatus
+from src.events.models import EP, EventStatus
 from src.events.schemas import EventUpdate, EventCreate, MatchCreate, MatchUpdate
 from src.events.service import EventDatabase
 
@@ -18,22 +19,23 @@ async def test_get_event_by_id_returns_event(test_event: EP, event_db: EventData
 
 
 @pytest.mark.asyncio
-async def test_can_create_event(event_db: EventDatabase) -> None:
+async def test_create_event_works(event_db: EventDatabase) -> None:
     data = EventCreate(
         name='my 1st event',
         status=EventStatus.not_started,
-        start_time=datetime.utcnow()
+        start_time=datetime.now(tz=timezone.utc)
     )
 
     new_event = await event_db.create_event(event=data)
 
     assert new_event.name == data.name
+    assert new_event.start_time == data.start_time
 
 
 @pytest.mark.asyncio
-async def test_can_update_event_data(test_event: EP, event_db: EventDatabase) -> None:
+async def test_update_events_works(test_event: EP, event_db: EventDatabase) -> None:
     new_name = 'new event'
-    new_start_time = datetime.utcnow()
+    new_start_time = datetime.now(tz=timezone.utc)
 
     data = EventUpdate(
         name=new_name,
@@ -47,7 +49,10 @@ async def test_can_update_event_data(test_event: EP, event_db: EventDatabase) ->
 
 
 @pytest.mark.asyncio
-async def test_can_delete_event(test_event: EP, event_db: EventDatabase) -> None:
+async def test_delete_event_works(test_event: EP, event_db: EventDatabase) -> None:
+    event = await event_db.get_event_by_id(event_id=test_event.id)
+    assert event
+
     await event_db.delete_event(event_id=test_event.id)
 
     deleted_event = await event_db.get_event_by_id(event_id=test_event.id)
@@ -56,10 +61,10 @@ async def test_can_delete_event(test_event: EP, event_db: EventDatabase) -> None
 
 
 @pytest.mark.asyncio
-async def test_can_create_match(test_event: EP, event_db: EventDatabase) -> None:
+async def test_create_match_works(test_event: EP, event_db: EventDatabase) -> None:
     team1 = '1st team'
     team2 = '2nd team'
-    start_time = datetime.utcnow()
+    start_time = datetime.now(tz=timezone.utc)
 
     data = MatchCreate(
         team1=team1,
@@ -74,29 +79,34 @@ async def test_can_create_match(test_event: EP, event_db: EventDatabase) -> None
 
 
 @pytest.mark.asyncio
-async def test_can_update_match(test_event: EP, event_db: EventDatabase) -> None:
+async def test_update_match_works(test_event: EP, event_db: EventDatabase) -> None:
     data = MatchCreate(
         team1='team1',
         team2='team2',
-        start_time=datetime.utcnow()
+        start_time=datetime.now(tz=timezone.utc)
     )
     match = await event_db._create_match(match=data, event_id=test_event.id)
 
+    new_team1 = 'new team 1'
+    new_team2 = 'new team 2'
+
     updated_data = MatchUpdate(
         id=match.id,
-        team1='new team 1',
-        team2='new team 2',
-        start_time=datetime.utcnow()
+        team1=new_team1,
+        team2=new_team2,
+        start_time=datetime.now(tz=timezone.utc)
     )
 
     updated_match = await event_db._update_match(match=updated_data)
 
-    assert updated_match.team1 == 'new team 1'
-    assert updated_match.team2 == 'new team 2'
+    assert updated_match.team1 == new_team1
+    assert updated_match.team2 == new_team2
 
 
 @pytest.mark.asyncio
-async def test_can_delete_match(test_event: EP, event_db: EventDatabase) -> None:
+async def test_delete_match_works(test_event: EP, event_db: EventDatabase) -> None:
+    assert len(test_event.matches) > 0
+
     await event_db._delete_match(match_id=test_event.matches[0].id)
 
     event_after = await event_db.get_event_by_id(event_id=test_event.id)
