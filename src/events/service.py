@@ -2,11 +2,12 @@ from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.events.base import BaseEventDatabase
 from src.events.models import Event, Match, EP, MP
 from src.events.schemas import EventCreate, MatchCreate, EventUpdate, MatchUpdate
 
 
-class EventDatabase:
+class EventDatabase(BaseEventDatabase):
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -50,9 +51,9 @@ class EventDatabase:
         return await self.get_event_by_id(event_id=event_id)
 
     async def delete_event(self, event_id: int) -> None:
-        event = await self.get_event_by_id(event_id=event_id)
         stmt = delete(Event).where(Event.id == event_id)
         await self.session.execute(stmt)
+        await self.session.commit()
 
     async def _get_match_by_id(self, match_id: int) -> MP | None:
         stmt = select(Match).where(Match.id == match_id)
