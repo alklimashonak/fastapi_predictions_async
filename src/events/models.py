@@ -28,7 +28,7 @@ class EventProtocol(Protocol):
     name: str
     status: int
     start_time: datetime
-    matches: list[MP]
+    matches: list[MatchProtocol]
 
 
 EP = TypeVar('EP', bound=EventProtocol)

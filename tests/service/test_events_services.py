@@ -72,20 +72,15 @@ async def test_create_match_works(test_event: EP, event_db: EventDatabase) -> No
         start_time=start_time
     )
 
-    match = await event_db._create_match(match=data, event_id=test_event.id)
+    await event_db._create_match(match=data, event_id=test_event.id)
+    refreshed_event = await event_db.get_event_by_id(event_id=test_event.id)
 
-    assert match.team1 == team1
-    assert match.team2 == team2
+    assert len(refreshed_event.matches) == len(test_event.matches) + 1
 
 
 @pytest.mark.asyncio
 async def test_update_match_works(test_event: EP, event_db: EventDatabase) -> None:
-    data = MatchCreate(
-        team1='team1',
-        team2='team2',
-        start_time=datetime.now(tz=timezone.utc)
-    )
-    match = await event_db._create_match(match=data, event_id=test_event.id)
+    match = test_event.matches[0]
 
     new_team1 = 'new team 1'
     new_team2 = 'new team 2'
@@ -97,7 +92,10 @@ async def test_update_match_works(test_event: EP, event_db: EventDatabase) -> No
         start_time=datetime.now(tz=timezone.utc)
     )
 
-    updated_match = await event_db._update_match(match=updated_data)
+    await event_db._update_match(match=updated_data)
+
+    refreshed_event = await event_db.get_event_by_id(event_id=test_event.id)
+    updated_match = refreshed_event.matches[0]
 
     assert updated_match.team1 == new_team1
     assert updated_match.team2 == new_team2

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.events.base import BaseEventDatabase
-from src.events.models import Event, Match, EP, MP
+from src.events.models import Event, Match, EP
 from src.events.schemas import EventCreate, MatchCreate, EventUpdate, MatchUpdate
 
 
@@ -55,22 +55,13 @@ class EventDatabase(BaseEventDatabase):
         await self.session.execute(stmt)
         await self.session.commit()
 
-    async def _get_match_by_id(self, match_id: int) -> MP | None:
-        stmt = select(Match).where(Match.id == match_id)
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
-
-    async def _create_match(self, match: MatchCreate, event_id: int) -> MP | None:
+    async def _create_match(self, match: MatchCreate, event_id: int) -> None:
         stmt = insert(Match).values(**match.dict(), event_id=event_id).returning(Match.id)
-        result = await self.session.execute(stmt)
+        await self.session.execute(stmt)
 
-        return await self._get_match_by_id(match_id=result.scalar_one_or_none())
-
-    async def _update_match(self, match: MatchUpdate) -> MP | None:
+    async def _update_match(self, match: MatchUpdate) -> None:
         stmt = update(Match).where(Match.id == match.id).values(**match.dict()).returning(Match.id)
-        result = await self.session.execute(stmt)
-
-        return await self._get_match_by_id(match_id=result.scalar_one_or_none())
+        await self.session.execute(stmt)
 
     async def _delete_match(self, match_id: int) -> None:
         stmt = delete(Match).where(Match.id == match_id)

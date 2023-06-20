@@ -1,6 +1,12 @@
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from pydantic import BaseSettings, PostgresDsn, EmailStr
+from pydantic import BaseSettings, PostgresDsn
+
+if TYPE_CHECKING:
+    EmailStr = str
+else:
+    from pydantic import EmailStr
 
 
 class Settings(BaseSettings):
