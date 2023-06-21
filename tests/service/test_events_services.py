@@ -3,13 +3,13 @@ from datetime import timezone
 
 import pytest
 
-from src.events.models import EP, EventStatus
+from src.events.models import EventStatus, Event
 from src.events.schemas import EventUpdate, EventCreate, MatchCreate, MatchUpdate
 from src.events.service import EventDatabase
 
 
 @pytest.mark.asyncio
-async def test_get_event_by_id_returns_event(test_event: EP, event_db: EventDatabase) -> None:
+async def test_get_event_by_id_returns_event(test_event: Event, event_db: EventDatabase) -> None:
     event = await event_db.get_event_by_id(event_id=test_event.id)
 
     assert event.id == test_event.id
@@ -33,7 +33,7 @@ async def test_create_event_works(event_db: EventDatabase) -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_events_works(test_event: EP, event_db: EventDatabase) -> None:
+async def test_update_events_works(test_event: Event, event_db: EventDatabase) -> None:
     new_name = 'new event'
     new_start_time = datetime.now(tz=timezone.utc)
 
@@ -41,7 +41,6 @@ async def test_update_events_works(test_event: EP, event_db: EventDatabase) -> N
         name=new_name,
         start_time=new_start_time
     )
-
     updated_event = await event_db.update_event(event_id=test_event.id, event=data)
 
     assert updated_event.name == new_name
@@ -49,7 +48,7 @@ async def test_update_events_works(test_event: EP, event_db: EventDatabase) -> N
 
 
 @pytest.mark.asyncio
-async def test_delete_event_works(test_event: EP, event_db: EventDatabase) -> None:
+async def test_delete_event_works(test_event: Event, event_db: EventDatabase) -> None:
     event = await event_db.get_event_by_id(event_id=test_event.id)
     assert event
 
@@ -61,7 +60,7 @@ async def test_delete_event_works(test_event: EP, event_db: EventDatabase) -> No
 
 
 @pytest.mark.asyncio
-async def test_create_matches_works(test_event: EP, event_db: EventDatabase) -> None:
+async def test_create_matches_works(test_event: Event, event_db: EventDatabase) -> None:
     team1 = '1st team'
     team2 = '2nd team'
     start_time = datetime.now(tz=timezone.utc)
@@ -86,7 +85,7 @@ async def test_create_matches_works(test_event: EP, event_db: EventDatabase) -> 
 
 
 @pytest.mark.asyncio
-async def test_update_matches_works(test_event: EP, event_db: EventDatabase) -> None:
+async def test_update_matches_works(test_event: Event, event_db: EventDatabase) -> None:
     match = test_event.matches[0]
 
     new_team1 = 'new team 1'
@@ -111,7 +110,7 @@ async def test_update_matches_works(test_event: EP, event_db: EventDatabase) -> 
 
 
 @pytest.mark.asyncio
-async def test_delete_matches_works(test_event: EP, event_db: EventDatabase) -> None:
+async def test_delete_matches_works(test_event: Event, event_db: EventDatabase) -> None:
     assert len(test_event.matches) > 0
 
     await event_db._delete_matches(matches=[test_event.matches[0].id])

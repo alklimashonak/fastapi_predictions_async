@@ -21,7 +21,7 @@ from fastapi_users.manager import BaseUserManager, UUIDIDMixin
 from fastapi_users.openapi import OpenAPIResponseType
 
 from src.events.base import BaseEventDatabase
-from src.events.models import MatchProtocol, MatchStatus, EventProtocol, EventStatus
+from src.events.models import MatchStatus, EventStatus
 from src.events.schemas import EventCreate, EventUpdate
 
 IDType = uuid.UUID
@@ -46,7 +46,7 @@ class UserModel(models.UserProtocol[IDType]):
 
 
 @dataclasses.dataclass
-class MatchModel(MatchProtocol):
+class MatchModel:
     team1: str
     team2: str
     status: MatchStatus
@@ -58,7 +58,7 @@ class MatchModel(MatchProtocol):
 
 
 @dataclasses.dataclass
-class EventModel(EventProtocol):
+class EventModel:
     name: str
     status: EventStatus
     start_time: datetime

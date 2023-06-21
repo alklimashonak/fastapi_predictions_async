@@ -14,7 +14,7 @@ from src.config import settings
 from src.database import Base
 from src.events.base import BaseEventDatabase
 from src.events.dependencies import get_event_db
-from src.events.models import EP, MatchStatus
+from src.events.models import MatchStatus, Event
 from src.events.schemas import MatchCreate, EventCreate
 
 logger = logging.getLogger('tests')
@@ -65,7 +65,7 @@ async def create_user(email: str, password: str, is_superuser: bool = False):
 async def create_event(
         name: str,
         matches: list[MatchCreate]
-) -> EP | None:
+) -> Event | None:
     async with get_async_session_context() as session:
         async with get_event_db_context(session) as db:
             event = EventCreate(
@@ -84,7 +84,7 @@ async def event_db() -> BaseEventDatabase:
 
 
 @pytest_asyncio.fixture
-async def test_event() -> EP:
+async def test_event() -> Event:
     name = '1st event'
     matches = [
         MatchCreate(
