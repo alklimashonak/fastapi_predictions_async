@@ -9,6 +9,10 @@ from src.events.service import EventDatabase
 
 
 def get_events_router(authenticator: Authenticator | None = None):
+    """
+    :param authenticator: required for tests
+    :return:
+    """
     router = APIRouter(prefix='/events', tags=['Events'])
 
     if authenticator:
@@ -20,9 +24,11 @@ def get_events_router(authenticator: Authenticator | None = None):
 
     @router.get('', response_model=list[EventSchema])
     async def get_events(
-            event_db: EventDatabase = Depends(get_event_db)
+            event_db: EventDatabase = Depends(get_event_db),
+            offset: int = 0,
+            limit: int = 100,
     ):
-        return await event_db.get_events()
+        return await event_db.get_events(offset=offset, limit=limit)
 
     @router.get('/{event_id}', response_model=EventSchema)
     async def get_event(

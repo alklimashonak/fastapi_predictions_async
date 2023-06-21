@@ -212,7 +212,9 @@ def mock_event_db() -> BaseEventDatabase:
             ],
         )
 
-        async def get_events(self) -> list[EventModel]:
+        async def get_events(self, offset: int = 0, limit: int = 100) -> list[EventModel]:
+            if offset > 0 or limit < 1:
+                return []
             return [self.existing_event]
 
         async def get_event_by_id(self, event_id: int) -> EventModel | None:

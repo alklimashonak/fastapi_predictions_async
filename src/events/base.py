@@ -3,7 +3,7 @@ from src.events.schemas import EventCreate, EventUpdate
 
 
 class BaseEventDatabase:
-    async def get_events(self):
+    async def get_events(self, offset: int, limit: int):
         raise NotImplementedError()
 
     async def get_event_by_id(self, event_id: int) -> Event | None:

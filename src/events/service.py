@@ -11,8 +11,8 @@ class EventDatabase(BaseEventDatabase):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_events(self):
-        stmt = select(Event).options(selectinload(Event.matches))
+    async def get_events(self, offset: int = 0, limit: int = 100):
+        stmt = select(Event).options(selectinload(Event.matches)).offset(offset).limit(limit)
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
@@ -21,7 +21,7 @@ class EventDatabase(BaseEventDatabase):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def create_event(self, event: EventCreate) -> Event | None:
+    async def create_event(self, event: EventCreate) -> Event:
         new_event = Event(**event.dict(exclude={'matches'}))
         self.session.add(new_event)
         await self.session.flush([new_event])
@@ -31,7 +31,7 @@ class EventDatabase(BaseEventDatabase):
         await self.session.commit()
         return await self.get_event_by_id(event_id=new_event.id)
 
-    async def update_event(self, event: EventUpdate, event_id: int) -> Event | None:
+    async def update_event(self, event: EventUpdate, event_id: int) -> Event:
         stmt = update(Event) \
             .where(Event.id == event_id) \
             .values(**event.dict(exclude={'new_matches', 'matches_to_update', 'matches_to_delete'}))
