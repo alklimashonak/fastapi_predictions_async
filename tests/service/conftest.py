@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest_asyncio
 from fastapi_users.exceptions import UserAlreadyExists
@@ -70,7 +70,7 @@ async def create_event(
         async with get_event_db_context(session) as db:
             event = EventCreate(
                 name=name,
-                start_time=datetime.utcnow(),
+                start_time=datetime.now(tz=timezone.utc),
                 matches=matches
             )
             return await db.create_event(event=event)
@@ -91,7 +91,7 @@ async def test_event() -> EP:
             team1='Aston Villa',
             team2='Chelsea',
             status=MatchStatus.not_started,
-            start_time=datetime.utcnow()
+            start_time=datetime.now(tz=timezone.utc)
         )
     ]
     return await create_event(name=name, matches=matches)

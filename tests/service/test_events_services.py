@@ -61,38 +61,47 @@ async def test_delete_event_works(test_event: EP, event_db: EventDatabase) -> No
 
 
 @pytest.mark.asyncio
-async def test_create_match_works(test_event: EP, event_db: EventDatabase) -> None:
+async def test_create_matches_works(test_event: EP, event_db: EventDatabase) -> None:
     team1 = '1st team'
     team2 = '2nd team'
     start_time = datetime.now(tz=timezone.utc)
 
-    data = MatchCreate(
-        team1=team1,
-        team2=team2,
-        start_time=start_time
-    )
+    data = [
+        MatchCreate(
+            team1=team1,
+            team2=team2,
+            start_time=start_time,
+        ),
+        MatchCreate(
+            team1=team1,
+            team2=team2,
+            start_time=start_time,
+        )
+    ]
 
-    await event_db._create_match(match=data, event_id=test_event.id)
+    await event_db._create_matches(matches=data, event_id=test_event.id)
     refreshed_event = await event_db.get_event_by_id(event_id=test_event.id)
 
-    assert len(refreshed_event.matches) == len(test_event.matches) + 1
+    assert len(refreshed_event.matches) == len(test_event.matches) + 2
 
 
 @pytest.mark.asyncio
-async def test_update_match_works(test_event: EP, event_db: EventDatabase) -> None:
+async def test_update_matches_works(test_event: EP, event_db: EventDatabase) -> None:
     match = test_event.matches[0]
 
     new_team1 = 'new team 1'
     new_team2 = 'new team 2'
 
-    updated_data = MatchUpdate(
-        id=match.id,
-        team1=new_team1,
-        team2=new_team2,
-        start_time=datetime.now(tz=timezone.utc)
-    )
+    updated_data = [
+        MatchUpdate(
+            id=match.id,
+            team1=new_team1,
+            team2=new_team2,
+            start_time=datetime.now(tz=timezone.utc)
+        )
+    ]
 
-    await event_db._update_match(match=updated_data)
+    await event_db._update_matches(matches=updated_data)
 
     refreshed_event = await event_db.get_event_by_id(event_id=test_event.id)
     updated_match = refreshed_event.matches[0]
@@ -102,10 +111,10 @@ async def test_update_match_works(test_event: EP, event_db: EventDatabase) -> No
 
 
 @pytest.mark.asyncio
-async def test_delete_match_works(test_event: EP, event_db: EventDatabase) -> None:
+async def test_delete_matches_works(test_event: EP, event_db: EventDatabase) -> None:
     assert len(test_event.matches) > 0
 
-    await event_db._delete_match(match_id=test_event.matches[0].id)
+    await event_db._delete_matches(matches=[test_event.matches[0].id])
 
     event_after = await event_db.get_event_by_id(event_id=test_event.id)
 

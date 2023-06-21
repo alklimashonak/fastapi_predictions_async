@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +26,7 @@ class MatchCreate(MatchBase):
     status: MatchStatus = Field(default=MatchStatus.not_started)
     team1_goals: int | None = None
     team2_goals: int | None = None
-    start_time: datetime
+    start_time: datetime = Field(default=datetime.utcnow()+timedelta(days=1))
 
 
 class MatchUpdate(MatchBase):
@@ -42,7 +42,7 @@ class MatchUpdate(MatchBase):
 class EventCreate(EventBase):
     name: str = Field(max_length=128)
     status: EventStatus = Field(default=EventStatus.not_started)
-    start_time: datetime
+    start_time: datetime = Field(default=datetime.utcnow()+timedelta(days=1))
     matches: list[MatchCreate] = []
 
 
