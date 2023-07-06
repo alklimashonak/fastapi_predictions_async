@@ -7,18 +7,17 @@ from fastapi_users.exceptions import UserAlreadyExists
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from src.auth.dependencies import get_user_db
-from src.auth.manager import get_user_manager
+from src.auth.base import BaseAuthService
 from src.auth.schemas import UserCreate
-from src.config import settings
+from src.auth.service import get_auth_service
+from src.core.config import settings
 from src.database import Base
-from src.events.base import BaseEventDatabase
-from src.events.dependencies import get_event_db
-from src.events.models import MatchStatus, Event
+from src.events.base import BaseEventService
+from src.events.models import Event
 from src.events.schemas import MatchCreate, EventCreate
+from src.events.service import get_event_service
 
 logger = logging.getLogger('tests')
-
 
 metadata = Base.metadata
 async_engine = create_async_engine(settings.TEST_DATABASE_URL_POSTGRES)
@@ -32,10 +31,8 @@ async def override_get_db():
 
 get_async_session_context = contextlib.asynccontextmanager(override_get_db)
 
-get_user_db_context = contextlib.asynccontextmanager(get_user_db)
-get_user_manager_context = contextlib.asynccontextmanager(get_user_manager)
-
-get_event_db_context = contextlib.asynccontextmanager(get_event_db)
+get_auth_service_context = contextlib.asynccontextmanager(get_auth_service)
+get_event_service_context = contextlib.asynccontextmanager(get_event_service)
 
 
 @pytest_asyncio.fixture(scope='class', autouse=True)
@@ -50,14 +47,11 @@ async def prepare_database() -> None:
 async def create_user(email: str, password: str, is_superuser: bool = False):
     try:
         async with get_async_session_context() as session:
-            async with get_user_db_context(session) as user_db:
-                async with get_user_manager_context(user_db) as user_manager:
-                    user = await user_manager.create(
-                        UserCreate(
-                            email=EmailStr(email), password=password, is_superuser=is_superuser
-                        )
-                    )
-                    return user
+            async with get_auth_service_context(session) as auth_context:
+                user = await auth_context.create(
+                    UserCreate(email=EmailStr(email), password=password, is_superuser=is_superuser)
+                )
+                return user
     except UserAlreadyExists:
         logger.warning(f"User {email} already exists")
 
@@ -67,19 +61,19 @@ async def create_event(
         matches: list[MatchCreate]
 ) -> Event | None:
     async with get_async_session_context() as session:
-        async with get_event_db_context(session) as db:
+        async with get_event_service_context(session) as event_context:
             event = EventCreate(
                 name=name,
-                start_time=datetime.now(tz=timezone.utc),
+                deadline=datetime.now(tz=timezone.utc),
                 matches=matches
             )
-            return await db.create_event(event=event)
+            return await event_context.create(event=event)
 
 
 @pytest_asyncio.fixture
-async def event_db() -> BaseEventDatabase:
+async def event_service() -> BaseEventService:
     async with get_async_session_context() as session:
-        async with get_event_db_context(session) as db:
+        async with get_event_service_context(session) as db:
             yield db
 
 
@@ -88,9 +82,8 @@ async def test_event() -> Event:
     name = '1st event'
     matches = [
         MatchCreate(
-            team1='Aston Villa',
-            team2='Chelsea',
-            status=MatchStatus.not_started,
+            home_team='Aston Villa',
+            away_team='Chelsea',
             start_time=datetime.now(tz=timezone.utc)
         )
     ]

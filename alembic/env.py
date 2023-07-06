@@ -7,7 +7,7 @@ from alembic import context
 
 from src.auth.models import User # noqa
 from src.events.models import Event, Match # noqa
-from src.config import settings
+from src.core.config import settings
 from src.database import Base
 
 # this is the Alembic Config object, which provides
