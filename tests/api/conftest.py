@@ -9,14 +9,20 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, Security
 from fastapi.security import OAuth2
+from pydantic import UUID4
 
-from src.core.security import get_password_hash
+from src.auth.base import BaseAuthService
+from src.auth.schemas import UserCreate
+from src.core.security import get_password_hash, verify_password
 from src.events.base import BaseEventService
 from src.events.models import Status
 from src.events.schemas import EventCreate
 
-user_password_hash = get_password_hash('user')
-superuser_password_hash = get_password_hash('admin')
+
+user_password = 'user'
+superuser_password = 'admin'
+user_password_hash = get_password_hash(user_password)
+superuser_password_hash = get_password_hash(superuser_password)
 
 
 @dataclasses.dataclass
@@ -93,20 +99,57 @@ def superuser() -> UserModel:
 
 
 @pytest.fixture
+def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
+    def _fake_get_auth_service() -> BaseAuthService:
+        class MockAuthService(BaseAuthService):
+            users = [active_user, superuser]
+
+            async def get_multiple(self) -> list[UserModel]:
+                return self.users
+
+            async def get_by_id(self, user_id: UUID4) -> UserModel | None:
+                for user in self.users:
+                    if user.id == user_id:
+                        return user
+                return None
+
+            async def get_by_email(self, email: str) -> UserModel | None:
+                for user in self.users:
+                    if user.email == email:
+                        return user
+                return None
+
+            async def create(self, new_user: UserCreate) -> UserModel:
+                user = UserModel(**new_user.dict())
+                return user
+
+            async def authenticate(self, email: str, password: str) -> UserModel | None:
+                for user in self.users:
+                    if user.email == email and verify_password(password, user.hashed_password):
+                        return user
+                return None
+
+        yield MockAuthService()
+
+    return _fake_get_auth_service
+
+
+@pytest.fixture
 def fake_get_event_service(event1: EventModel):
     def _fake_get_event_service() -> BaseEventService:
         class MockEventService(BaseEventService):
-            events = {
-                event1.id: event1
-            }
+            events = [event1]
 
             async def get_multiple(self, offset: int = 0, limit: int = 100) -> list[EventModel]:
                 if offset > 0 or limit < 1:
                     return []
-                return [event for event in self.events.values()]
+                return self.events
 
             async def get_by_id(self, event_id: int) -> EventModel | None:
-                return self.events.get(event_id)
+                for event in self.events:
+                    if event.id == event_id:
+                        return event
+                return None
 
             async def create(self, event: EventCreate) -> EventModel:
                 new_event = EventModel(**event.dict())
