@@ -7,9 +7,10 @@ from typing import AsyncGenerator
 import httpx
 import pytest
 from asgi_lifespan import LifespanManager
-from fastapi import FastAPI, Security
+from fastapi import FastAPI, Security, HTTPException
 from fastapi.security import OAuth2
 from pydantic import UUID4
+from starlette import status
 
 from src.auth.base import BaseAuthService
 from src.auth.schemas import UserCreate
@@ -55,7 +56,7 @@ class EventModel:
     id: int = dataclasses.field(default=random.randint(1, 999))
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def match1() -> MatchModel:
     return MatchModel(
         id=123,
@@ -67,7 +68,7 @@ def match1() -> MatchModel:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def event1(match1: MatchModel) -> EventModel:
     return EventModel(
         id=123,
@@ -78,7 +79,7 @@ def event1(match1: MatchModel) -> EventModel:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def active_user() -> UserModel:
     return UserModel(
         email="testuser@example.com",
@@ -88,7 +89,7 @@ def active_user() -> UserModel:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def superuser() -> UserModel:
     return UserModel(
         email="testsuperuser@example.com",
@@ -98,7 +99,7 @@ def superuser() -> UserModel:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
     def _fake_get_auth_service() -> BaseAuthService:
         class MockAuthService(BaseAuthService):
@@ -134,7 +135,7 @@ def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
     return _fake_get_auth_service
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def fake_get_event_service(event1: EventModel):
     def _fake_get_event_service() -> BaseEventService:
         class MockEventService(BaseEventService):
@@ -178,12 +179,11 @@ reusable_oauth2 = OAuth2(
 @pytest.fixture
 def fake_get_current_user(active_user: UserModel, superuser: UserModel):
     async def _fake_get_current_user(oauth_header: str = Security(reusable_oauth2)) -> UserModel | None:
-        users = {
-            active_user.email: active_user,
-            superuser.email: superuser,
-        }
-        user = users.get(oauth_header)
-        return user
+        users = [active_user, superuser]
+        for user in users:
+            if user.email == oauth_header:
+                return user
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
     return _fake_get_current_user
 
