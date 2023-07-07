@@ -40,10 +40,8 @@ async def async_client(
 @pytest.mark.asyncio
 class TestLogin:
     async def test_get_access_token_valid_credentials(
-            self,
-            active_user: UserModel,
-            async_client: AsyncClient
-    ):
+            self, active_user: UserModel, async_client: AsyncClient
+    ) -> None:
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -56,7 +54,9 @@ class TestLogin:
         assert response.status_code == status.HTTP_200_OK
         assert response.json().get('access_token')
 
-    async def test_get_400_invalid_credentials(self, active_user: UserModel, async_client: AsyncClient):
+    async def test_get_400_invalid_credentials(
+            self, active_user: UserModel, async_client: AsyncClient
+    ) -> None:
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -69,22 +69,23 @@ class TestLogin:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json().get('detail') == 'Incorrect email or password'
 
-    async def test_blank_data(self, active_user: UserModel, async_client: AsyncClient):
+    async def test_blank_data(
+            self, active_user: UserModel, async_client: AsyncClient
+    ) -> None:
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        data = {
-            'username': active_user.email,
-            'password': 'wrong_password',
-        }
-        response = await async_client.post('/auth/login', headers=headers)
+        data = {}
+        response = await async_client.post('/auth/login', data=data, headers=headers)
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.asyncio
 class TestRegister:
-    async def test_user_already_exists(self, active_user: UserModel, async_client: AsyncClient):
+    async def test_user_already_exists(
+            self, active_user: UserModel, async_client: AsyncClient
+    ) -> None:
         user_data = {
             'email': active_user.email,
             'password': 'some_password',
@@ -102,7 +103,8 @@ class TestRegister:
             ('invalid_email', status.HTTP_422_UNPROCESSABLE_ENTITY),
         ]
     )
-    async def test_email_validity(self, active_user: UserModel, async_client: AsyncClient, email, status_code):
+    async def test_email_validity(
+            self, active_user: UserModel, async_client: AsyncClient, email: str, status_code: int) -> None:
         user_data = {
             'email': email,
             'password': 'some_password',
@@ -112,7 +114,7 @@ class TestRegister:
 
         assert response.status_code == status_code
 
-    async def test_successfully_registration_returns_user(self, async_client: AsyncClient):
+    async def test_successfully_registration_returns_user(self, async_client: AsyncClient) -> None:
         new_user_email = 'newuser@example.com'
         user_data = {
             'email': new_user_email,

@@ -8,6 +8,7 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from src.auth.base import BaseAuthService
+from src.auth.models import User
 from src.auth.schemas import UserCreate
 from src.auth.service import get_auth_service
 from src.core.config import settings
@@ -78,6 +79,13 @@ async def event_service() -> BaseEventService:
 
 
 @pytest_asyncio.fixture
+async def auth_service() -> BaseAuthService:
+    async with get_async_session_context() as session:
+        async with get_auth_service_context(session) as db:
+            yield db
+
+
+@pytest_asyncio.fixture
 async def test_event() -> Event:
     name = '1st event'
     matches = [
@@ -88,3 +96,10 @@ async def test_event() -> Event:
         )
     ]
     return await create_event(name=name, matches=matches)
+
+
+@pytest_asyncio.fixture
+async def test_user() -> User:
+    email = settings.TEST_USER_EMAIL
+    password = settings.TEST_USER_PASSWORD
+    return await create_user(email=email, password=password, is_superuser=False)
