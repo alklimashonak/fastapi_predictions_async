@@ -39,7 +39,11 @@ async def async_client(
 
 @pytest.mark.asyncio
 class TestLogin:
-    async def test_get_access_token_valid_credentials(self, active_user: UserModel, async_client: AsyncClient):
+    async def test_get_access_token_valid_credentials(
+            self,
+            active_user: UserModel,
+            async_client: AsyncClient
+    ):
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -50,7 +54,7 @@ class TestLogin:
         response = await async_client.post('/auth/login', data=data, headers=headers)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()['access_token']
+        assert response.json().get('access_token')
 
     async def test_get_400_invalid_credentials(self, active_user: UserModel, async_client: AsyncClient):
         headers = {
@@ -63,4 +67,62 @@ class TestLogin:
         response = await async_client.post('/auth/login', data=data, headers=headers)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.json()['detail'] == 'Incorrect email or password'
+        assert response.json().get('detail') == 'Incorrect email or password'
+
+    async def test_blank_data(self, active_user: UserModel, async_client: AsyncClient):
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        data = {
+            'username': active_user.email,
+            'password': 'wrong_password',
+        }
+        response = await async_client.post('/auth/login', headers=headers)
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.asyncio
+class TestRegister:
+    async def test_user_already_exists(self, active_user: UserModel, async_client: AsyncClient):
+        user_data = {
+            'email': active_user.email,
+            'password': 'some_password',
+        }
+
+        response = await async_client.post('/auth/register', json=user_data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()['detail'] == 'The user with this email already exists in the system.'
+
+    @pytest.mark.parametrize(
+        'email, status_code',
+        [
+            ('validemail@example.com', status.HTTP_200_OK),
+            ('invalid_email', status.HTTP_422_UNPROCESSABLE_ENTITY),
+        ]
+    )
+    async def test_email_validity(self, active_user: UserModel, async_client: AsyncClient, email, status_code):
+        user_data = {
+            'email': email,
+            'password': 'some_password',
+        }
+
+        response = await async_client.post('/auth/register', json=user_data)
+
+        assert response.status_code == status_code
+
+    async def test_successfully_registration_returns_user(self, async_client: AsyncClient):
+        new_user_email = 'newuser@example.com'
+        user_data = {
+            'email': new_user_email,
+            'password': 'password'
+        }
+
+        response = await async_client.post('/auth/register', json=user_data)
+
+        assert response.json()['id']
+        assert response.json()['email'] == new_user_email
+        assert not response.json().get('password')
+        assert response.json()['is_active'] is True
+        assert response.json()['is_superuser'] is False

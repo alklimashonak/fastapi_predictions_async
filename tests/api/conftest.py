@@ -121,7 +121,13 @@ def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
                 return None
 
             async def create(self, new_user: UserCreate) -> UserModel:
-                user = UserModel(**new_user.dict())
+                hashed_password = get_password_hash(new_user.password)
+                user = UserModel(
+                    **new_user.dict(exclude={'password'}, exclude_none=True),
+                    hashed_password=hashed_password,
+                    is_active=True,
+                    is_superuser=False,
+                )
                 return user
 
             async def authenticate(self, email: str, password: str) -> UserModel | None:
