@@ -1,5 +1,5 @@
 from src.events.models import Event
-from src.events.schemas import EventCreate
+from src.events.schemas import EventCreate, MatchCreate
 
 
 class BaseEventService:
@@ -13,4 +13,7 @@ class BaseEventService:
         raise NotImplementedError()
 
     async def delete(self, event_id: int) -> None:
+        raise NotImplementedError()
+
+    async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
         raise NotImplementedError()
