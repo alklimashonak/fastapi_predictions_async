@@ -1,11 +1,14 @@
+import logging
 from datetime import datetime
 from datetime import timezone
 
 import pytest
 
 from src.events.base import BaseEventService
-from src.events.models import Status, Event
+from src.events.models import Event
 from src.events.schemas import EventCreate, MatchCreate
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio

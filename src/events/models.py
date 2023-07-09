@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM as pgEnum
 
 from src.database import Base
+from src.predictions.models import Prediction
 
 
 class MatchStatus(enum.IntEnum):
@@ -43,3 +44,5 @@ class Match(Base):
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     event_id: Mapped[int] = mapped_column(Integer, ForeignKey('events.id', ondelete='CASCADE'))
+
+    predictions: Mapped[list['Prediction']] = relationship('Prediction', backref='match')
