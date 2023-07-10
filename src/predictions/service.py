@@ -33,7 +33,15 @@ class PredictionService(BasePredictionService):
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    async def create(self, prediction: PredictionCreate, user_id: UUID4) -> Prediction:
+    async def create_multiple(self, predictions: list[PredictionCreate], user_id: UUID4) -> Sequence[Prediction]:
+        new_predictions = [Prediction(**prediction.dict(), user_id=user_id) for prediction in predictions]
+
+        self.session.add_all(new_predictions)
+        await self.session.flush(new_predictions)
+        await self.session.commit()
+        return new_predictions
+
+    async def create_one(self, prediction: PredictionCreate, user_id: UUID4) -> Sequence[Prediction]:
         new_prediction = Prediction(**prediction.dict(), user_id=user_id)
 
         self.session.add(new_prediction)
