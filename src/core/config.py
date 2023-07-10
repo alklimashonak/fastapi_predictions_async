@@ -10,6 +10,8 @@ else:
 
 
 class Settings(BaseSettings):
+    TESTING: bool = False
+
     SECRET_KEY: str = 'secret'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 

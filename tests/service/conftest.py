@@ -1,8 +1,12 @@
 import contextlib
 import logging
+import pathlib
 from datetime import datetime, timezone
 
+import pytest
 import pytest_asyncio
+from alembic import command
+from alembic.config import Config
 from fastapi_users.exceptions import UserAlreadyExists
 from pydantic import EmailStr, UUID4
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -24,6 +28,9 @@ from src.predictions.service import get_prediction_service
 
 logger = logging.getLogger('tests')
 
+settings.TESTING = True
+
+
 metadata = Base.metadata
 async_engine = create_async_engine(settings.TEST_DATABASE_URL_POSTGRES)
 async_session = async_sessionmaker(async_engine, expire_on_commit=False)
@@ -39,6 +46,16 @@ get_async_session_context = contextlib.asynccontextmanager(override_get_db)
 get_auth_service_context = contextlib.asynccontextmanager(get_auth_service)
 get_event_service_context = contextlib.asynccontextmanager(get_event_service)
 get_prediction_service_context = contextlib.asynccontextmanager(get_prediction_service)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def run_migrations() -> None:
+    root_dir = pathlib.Path(__file__).absolute().parent.parent.parent
+    ini_file = root_dir.joinpath("alembic.ini").__str__()
+    alembic_directory = root_dir.joinpath("alembic").__str__()
+    config = Config(ini_file)
+    config.set_main_option("script_location", alembic_directory)
+    command.upgrade(config, "head")
 
 
 @pytest_asyncio.fixture(scope='function', autouse=True)
@@ -76,21 +93,13 @@ async def create_event(
             return await event_context.create(event=event)
 
 
-async def create_prediction(
-        home_goals: int,
-        away_goals: int,
+async def create_predictions(
+        predictions: list[PredictionCreate],
         user_id: UUID4,
-        match_id: int,
 ) -> Prediction:
     async with get_async_session_context() as session:
         async with get_prediction_service_context(session) as prediction_context:
-            prediction = PredictionCreate(
-                home_goals=home_goals,
-                away_goals=away_goals,
-                match_id=match_id,
-            )
-
-            return await prediction_context.create(prediction=prediction, user_id=user_id)
+            return await prediction_context.create_multiple(predictions=predictions, user_id=user_id)
 
 
 @pytest_asyncio.fixture
@@ -122,20 +131,12 @@ async def test_event() -> Event:
             home_team='Aston Villa',
             away_team='Chelsea',
             start_time=datetime.now(tz=timezone.utc)
-        )
-    ]
-    return await create_event(name=name, matches=matches)
-
-
-@pytest_asyncio.fixture
-async def test_event2() -> Event:
-    name = '2st event'
-    matches = [
+        ),
         MatchCreate(
-            home_team='Arsenal',
-            away_team='Crystal Palace',
+            home_team='Liverpool',
+            away_team='Newcastle',
             start_time=datetime.now(tz=timezone.utc)
-        )
+        ),
     ]
     return await create_event(name=name, matches=matches)
 
@@ -148,12 +149,19 @@ async def test_user() -> User:
 
 
 @pytest_asyncio.fixture
-async def test_prediction(test_user: User, test_event: Event) -> Prediction:
-    match = test_event.matches[0]
-    return await create_prediction(home_goals=1, away_goals=2, user_id=test_user.id, match_id=match.id)
+async def test_predictions(test_user: User, test_event: Event) -> list[Prediction]:
+    match1, match2 = test_event.matches
+    predictions = [
+        PredictionCreate(
+            home_goals=2,
+            away_goals=1,
+            match_id=match1.id,
+        ),
+        PredictionCreate(
+            home_goals=3,
+            away_goals=2,
+            match_id=match2.id,
+        ),
+    ]
 
-
-@pytest_asyncio.fixture
-async def test_prediction2(test_user: User, test_event2: Event) -> Prediction:
-    match = test_event2.matches[0]
-    return await create_prediction(home_goals=1, away_goals=2, user_id=test_user.id, match_id=match.id)
+    return await create_predictions(predictions=predictions, user_id=test_user.id)

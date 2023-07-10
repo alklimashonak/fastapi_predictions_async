@@ -32,6 +32,7 @@ def upgrade() -> None:
     )
 
     op.create_index(op.f('ix_predictions_id'), 'predictions', ['id'], unique=False)
+    op.create_unique_constraint('uix_predictions_match_id_user_id', 'user', ['name'], schema='my_schema')
     # ### end Alembic commands ###
 
 
