@@ -5,7 +5,7 @@ from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM as pgEnum
 
-from src.database import Base
+from src.db.database import Base
 from src.predictions.models import Prediction
 
 

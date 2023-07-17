@@ -16,7 +16,7 @@ from src.auth.models import User
 from src.auth.schemas import UserCreate
 from src.auth.service import get_auth_service
 from src.core.config import settings
-from src.database import Base
+from src.db.database import Base
 from src.events.base import BaseEventService
 from src.events.models import Event
 from src.events.schemas import MatchCreate, EventCreate

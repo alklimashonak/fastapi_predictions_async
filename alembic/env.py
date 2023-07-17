@@ -9,7 +9,7 @@ from alembic import context
 from src.auth.models import User # noqa
 from src.events.models import Event, Match # noqa
 from src.core.config import settings
-from src.database import Base
+from src.db.database import Base
 
 logger = logging.getLogger(__name__)
 

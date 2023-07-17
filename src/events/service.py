@@ -3,7 +3,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.database import get_async_session
+from src.db.database import get_async_session
 from src.events.base import BaseEventService
 from src.events.models import Event, Match
 from src.events.schemas import EventCreate, MatchCreate

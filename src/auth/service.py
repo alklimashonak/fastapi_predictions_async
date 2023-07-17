@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.models import User
 from src.auth.schemas import UserCreate
 from src.core.security import verify_password, get_password_hash
-from src.database import get_async_session
+from src.db.database import get_async_session
 
 logger = logging.getLogger(__name__)
 

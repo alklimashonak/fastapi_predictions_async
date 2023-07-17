@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from starlette import status
 
-from src.database import get_async_session
+from src.db.database import get_async_session
 from src.events.models import Match
 from src.predictions.base import BasePredictionService
 from src.predictions.models import Prediction

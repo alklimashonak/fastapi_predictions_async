@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import Integer, ForeignKey, UUID, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.database import Base
+from src.db.database import Base
 
 
 class Prediction(Base):
