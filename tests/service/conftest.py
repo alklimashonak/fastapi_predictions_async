@@ -30,7 +30,6 @@ logger = logging.getLogger('tests')
 
 settings.TESTING = True
 
-
 metadata = Base.metadata
 async_engine = create_async_engine(settings.TEST_DATABASE_URL_POSTGRES)
 async_session = async_sessionmaker(async_engine, expire_on_commit=False)
@@ -93,13 +92,13 @@ async def create_event(
             return await event_context.create(event=event)
 
 
-async def create_predictions(
-        predictions: list[PredictionCreate],
+async def create_prediction(
+        prediction: PredictionCreate,
         user_id: UUID4,
 ) -> Prediction:
     async with get_async_session_context() as session:
         async with get_prediction_service_context(session) as prediction_context:
-            return await prediction_context.create_multiple(predictions=predictions, user_id=user_id)
+            return await prediction_context.create(prediction=prediction, user_id=user_id)
 
 
 @pytest_asyncio.fixture
@@ -149,19 +148,12 @@ async def test_user() -> User:
 
 
 @pytest_asyncio.fixture
-async def test_predictions(test_user: User, test_event: Event) -> list[Prediction]:
-    match1, match2 = test_event.matches
-    predictions = [
-        PredictionCreate(
-            home_goals=2,
-            away_goals=1,
-            match_id=match1.id,
-        ),
-        PredictionCreate(
-            home_goals=3,
-            away_goals=2,
-            match_id=match2.id,
-        ),
-    ]
+async def test_prediction(test_user: User, test_event: Event) -> Prediction:
+    match, _ = test_event.matches
+    prediction = PredictionCreate(
+        home_goals=2,
+        away_goals=1,
+        match_id=match.id,
+    )
 
-    return await create_predictions(predictions=predictions, user_id=test_user.id)
+    return await create_prediction(prediction=prediction, user_id=test_user.id)

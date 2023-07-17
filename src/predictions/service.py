@@ -1,16 +1,21 @@
+import logging
 from typing import Sequence
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from pydantic import UUID4
-from sqlalchemy import select, insert, update, Result
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload, join
+from sqlalchemy.orm import joinedload
+from starlette import status
 
 from src.database import get_async_session
 from src.events.models import Match
 from src.predictions.base import BasePredictionService
 from src.predictions.models import Prediction
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class PredictionService(BasePredictionService):
@@ -33,21 +38,21 @@ class PredictionService(BasePredictionService):
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    async def create_multiple(self, predictions: list[PredictionCreate], user_id: UUID4) -> Sequence[Prediction]:
-        new_predictions = [Prediction(**prediction.dict(), user_id=user_id) for prediction in predictions]
-
-        self.session.add_all(new_predictions)
-        await self.session.flush(new_predictions)
-        await self.session.commit()
-        return new_predictions
-
-    async def create_one(self, prediction: PredictionCreate, user_id: UUID4) -> Sequence[Prediction]:
+    async def create(self, prediction: PredictionCreate, user_id: UUID4) -> Prediction | None:
         new_prediction = Prediction(**prediction.dict(), user_id=user_id)
 
         self.session.add(new_prediction)
-        await self.session.flush([new_prediction])
-        await self.session.commit()
-        return await self.get_by_id(prediction_id=new_prediction.id)
+
+        try:
+            await self.session.flush([new_prediction])
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Prediction for this match already exists',
+            )
+        return new_prediction
 
     async def update(self, prediction_id: int, prediction: PredictionUpdate) -> Prediction:
         stmt = update(Prediction).values(**prediction.dict()).where(Prediction.id == prediction_id)

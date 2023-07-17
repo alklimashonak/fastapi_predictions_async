@@ -13,7 +13,7 @@ class BasePredictionService:
     async def get_by_id(self, prediction_id: int) -> Prediction:
         raise NotImplementedError
 
-    async def create_multiple(self, predictions: list[PredictionCreate], user_id: UUID4) -> Sequence[Prediction]:
+    async def create(self, prediction: PredictionCreate, user_id: UUID4) -> Prediction:
         raise NotImplementedError
 
     async def update(self, prediction_id: int, prediction: PredictionUpdate) -> Prediction:
