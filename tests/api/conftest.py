@@ -1,7 +1,7 @@
 import dataclasses
-import random
 import uuid
 from datetime import datetime
+from itertools import count
 from typing import AsyncGenerator
 
 import httpx
@@ -18,7 +18,8 @@ from src.core.security import get_password_hash, verify_password
 from src.events.base import BaseEventService
 from src.events.models import Status
 from src.events.schemas import EventCreate
-
+from src.predictions.base import BasePredictionService
+from src.predictions.schemas import PredictionCreate, PredictionUpdate
 
 user_password = 'user'
 superuser_password = 'admin'
@@ -44,7 +45,7 @@ class MatchModel:
     status: Status = Status.not_started
     home_goals: int | None = None
     away_goals: int | None = None
-    id: int = dataclasses.field(default=random.randint(1, 999))
+    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
 
 
 @dataclasses.dataclass
@@ -53,7 +54,16 @@ class EventModel:
     deadline: datetime
     matches: list[MatchModel] = dataclasses.field(default_factory=lambda: [])
     status: Status = Status.not_started
-    id: int = dataclasses.field(default=random.randint(1, 999))
+    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
+
+
+@dataclasses.dataclass
+class PredictionModel:
+    home_goals: int
+    away_goals: int
+    match_id: int
+    user_id: uuid.UUID
+    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
 
 
 @pytest.fixture(scope='session')
@@ -96,6 +106,26 @@ def superuser() -> UserModel:
         hashed_password=superuser_password_hash,
         is_active=True,
         is_superuser=True,
+    )
+
+
+@pytest.fixture(scope='session')
+def prediction1(active_user: UserModel, match1: MatchModel) -> PredictionModel:
+    return PredictionModel(
+        home_goals=1,
+        away_goals=0,
+        user_id=active_user.id,
+        match_id=match1.id,
+    )
+
+
+@pytest.fixture(scope='session')
+def prediction2(superuser: UserModel, match1: MatchModel) -> PredictionModel:
+    return PredictionModel(
+        home_goals=1,
+        away_goals=0,
+        user_id=superuser.id,
+        match_id=match1.id,
     )
 
 
@@ -170,6 +200,41 @@ def fake_get_event_service(event1: EventModel):
         yield MockEventService()
 
     return _fake_get_event_service
+
+
+@pytest.fixture(scope='session')
+def fake_get_prediction_service(prediction1: PredictionModel, prediction2: PredictionModel, event1: EventModel):
+    def _fake_get_prediction_service() -> BasePredictionService:
+        class MockPredictionService(BasePredictionService):
+            predictions = [prediction1, prediction2]
+
+            async def get_multiple_by_event_id(self, event_id: int, user_id: UUID4) -> list[PredictionModel]:
+                event_matches = [match.id for match in event1.matches]
+                return [prediction for prediction in self.predictions if
+                        prediction.user_id == user_id and prediction.match_id in event_matches]
+
+            async def get_by_id(self, prediction_id: int) -> PredictionModel | None:
+                for prediction in self.predictions:
+                    if prediction.id == prediction_id:
+                        return prediction
+                return None
+
+            async def create(self, prediction: PredictionCreate, user_id: UUID4) -> PredictionModel:
+                return PredictionModel(**prediction.dict(), user_id=user_id)
+
+            async def update(self, prediction_id: int, prediction: PredictionUpdate) -> PredictionModel:
+                prediction_to_update = await self.get_by_id(prediction_id=prediction_id)
+                return PredictionModel(
+                    id=prediction_id,
+                    home_goals=prediction.home_goals,
+                    away_goals=prediction.away_goals,
+                    match_id=prediction_to_update.match_id,
+                    user_id=prediction_to_update.user_id,
+                )
+
+        yield MockPredictionService()
+
+    return _fake_get_prediction_service
 
 
 reusable_oauth2 = OAuth2(
