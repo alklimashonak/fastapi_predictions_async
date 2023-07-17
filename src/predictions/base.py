@@ -19,5 +19,3 @@ class BasePredictionService:
     async def update(self, prediction_id: int, prediction: PredictionUpdate) -> Prediction:
         raise NotImplementedError
 
-    async def create_one(self, prediction: PredictionCreate, user_id: UUID4) -> Prediction:
-        raise NotImplementedError

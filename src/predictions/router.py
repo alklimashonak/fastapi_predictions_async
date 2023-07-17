@@ -19,7 +19,7 @@ async def get_predictions(
     return await prediction_service.get_multiple_by_event_id(event_id=event_id, user_id=current_user.id)
 
 
-@router.post('/predictions', response_model=PredictionRead)
+@router.post('/predictions', response_model=PredictionRead, status_code=status.HTTP_201_CREATED)
 async def create_prediction(
         prediction: PredictionCreate,
         current_user: UserRead = Depends(get_current_user),
@@ -36,6 +36,9 @@ async def update_prediction(
         prediction_service: BasePredictionService = Depends(get_prediction_service),
 ):
     prediction_to_update = await prediction_service.get_by_id(prediction_id=prediction_id)
+
+    if not prediction_to_update:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Prediction not found')
 
     if prediction_to_update.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can only edit your own predictions')
