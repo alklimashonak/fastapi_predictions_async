@@ -4,3 +4,4 @@
 /api.log
 /predictions.db
 /predictions_test.db
+/.coverage
