@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from fastapi import Depends
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +15,7 @@ class EventService(BaseEventService):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_multiple(self, offset: int = 0, limit: int = 100):
+    async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[Event]:
         stmt = select(Event).options(selectinload(Event.matches)).offset(offset).limit(limit)
         result = await self.session.execute(stmt)
         return result.scalars().all()

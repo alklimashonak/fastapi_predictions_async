@@ -2,19 +2,17 @@ from datetime import datetime, timedelta
 
 from pydantic import BaseModel, Field
 
-from src.events.models import Status, MatchStatus
-
 
 class EventBase(BaseModel):
     name: str | None = None
-    status: Status | None = None
+    status: int | None = None
     deadline: datetime | None = None
 
 
 class MatchBase(BaseModel):
     home_team: str | None = None
     away_team: str | None = None
-    status: MatchStatus | None = None
+    status: int | None = None
     home_goals: int | None = None
     away_goals: int | None = None
     start_time: datetime | None = None
@@ -28,7 +26,7 @@ class MatchCreate(MatchBase):
 
 class EventCreate(EventBase):
     name: str = Field(max_length=128)
-    status: Status = Field(default=Status.not_started)
+    status: int = Field(default=0)
     deadline: datetime = Field(default=datetime.utcnow()+timedelta(days=1))
     matches: list[MatchCreate] = []
 
@@ -37,10 +35,11 @@ class MatchRead(MatchBase):
     id: int
     home_team: str
     away_team: str
-    status: MatchStatus
+    status: int
     home_goals: int | None
     away_goals: int | None
     start_time: datetime
+    event_id: int
 
     class Config:
         orm_mode = True
@@ -49,7 +48,7 @@ class MatchRead(MatchBase):
 class EventRead(EventBase):
     id: int
     name: str
-    status: Status
+    status: int
     deadline: datetime
     matches: list[MatchRead]
 

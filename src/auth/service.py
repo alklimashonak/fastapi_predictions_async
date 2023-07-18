@@ -1,4 +1,5 @@
 import logging
+from typing import Sequence
 
 from fastapi import Depends
 from pydantic import UUID4
@@ -17,7 +18,7 @@ class AuthService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_multiple(self) -> list[User]:
+    async def get_multiple(self) -> Sequence[User]:
         stmt = select(User)
         result = await self.session.execute(stmt)
         return result.scalars().all()
