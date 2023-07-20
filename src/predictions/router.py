@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from starlette import status
 
 from src.auth.dependencies import get_current_user
 from src.auth.schemas import UserRead
 from src.predictions.base import BasePredictionService
+from src.predictions.dependencies import get_prediction_service
 from src.predictions.schemas import PredictionRead, PredictionCreate, PredictionUpdate
-from src.predictions.service import get_prediction_service
+from src.predictions.service import PredictionService
 
 router = APIRouter()
 
@@ -14,7 +15,7 @@ router = APIRouter()
 async def get_predictions(
         event_id: int,
         current_user: UserRead = Depends(get_current_user),
-        prediction_service: BasePredictionService = Depends(get_prediction_service),
+        prediction_service: PredictionService = Depends(get_prediction_service),
 ):
     return await prediction_service.get_multiple_by_event_id(event_id=event_id, user_id=current_user.id)
 
@@ -33,14 +34,6 @@ async def update_prediction(
         prediction_id: int,
         prediction: PredictionUpdate,
         current_user: UserRead = Depends(get_current_user),
-        prediction_service: BasePredictionService = Depends(get_prediction_service),
+        prediction_service: PredictionService = Depends(get_prediction_service),
 ):
-    prediction_to_update = await prediction_service.get_by_id(prediction_id=prediction_id)
-
-    if not prediction_to_update:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Prediction not found')
-
-    if prediction_to_update.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can only edit your own predictions')
-
-    return await prediction_service.update(prediction_id=prediction_id, prediction=prediction)
+    return await prediction_service.update(prediction_id=prediction_id, prediction=prediction, user_id=current_user.id)

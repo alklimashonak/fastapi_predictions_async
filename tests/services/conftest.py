@@ -1,24 +1,13 @@
 import dataclasses
 from datetime import datetime
 from itertools import count
-from typing import AsyncGenerator
 from uuid import UUID, uuid4
 
-import httpx
 import pytest
-from asgi_lifespan import LifespanManager
-from fastapi import FastAPI, Security, HTTPException
-from fastapi.security import OAuth2
-from starlette import status
 
-from src.auth.base import BaseAuthService
-from src.auth.schemas import UserCreate
-from src.core.security import get_password_hash, verify_password
-from src.events.base import BaseEventService
+from src.auth.base import BaseAuthRepository
+from src.core.security import get_password_hash
 from src.events.models import Status
-from src.events.schemas import EventCreate
-from src.predictions.base import BasePredictionService
-from src.predictions.schemas import PredictionCreate, PredictionUpdate
 
 user_password = 'user'
 superuser_password = 'admin'
@@ -129,9 +118,9 @@ def prediction2(superuser: UserModel, match1: MatchModel) -> PredictionModel:
 
 
 @pytest.fixture(scope='session')
-def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
-    def _fake_get_auth_service() -> BaseAuthService:
-        class MockAuthService(BaseAuthService):
+def fake_get_auth_repo(active_user: UserModel, superuser: UserModel):
+    def _fake_get_auth_repo() -> BaseAuthRepository:
+        class MockAuthService(BaseAuthRepository):
             users = [active_user, superuser]
 
             async def get_multiple(self) -> list[UserModel]:
@@ -251,37 +240,3 @@ def fake_get_prediction_service(prediction1: PredictionModel, prediction2: Predi
         yield MockPredictionService()
 
     return _fake_get_prediction_service
-
-
-reusable_oauth2 = OAuth2(
-    flows={
-        "password": {
-            "tokenUrl": "/auth/login",
-            "scopes": {"read:users": "Read the users", "write:users": "Create users"},
-        }
-    }
-)
-
-
-@pytest.fixture
-def fake_get_current_user(active_user: UserModel, superuser: UserModel):
-    async def _fake_get_current_user(oauth_header: str = Security(reusable_oauth2)) -> UserModel | None:
-        users = [active_user, superuser]
-        for user in users:
-            if user.email == oauth_header:
-                return user
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-
-    return _fake_get_current_user
-
-
-@pytest.fixture
-def get_test_client():
-    async def _get_test_client(app: FastAPI) -> AsyncGenerator[httpx.AsyncClient, None]:
-        async with LifespanManager(app):
-            async with httpx.AsyncClient(
-                    app=app, base_url="http://app.io"
-            ) as test_client:
-                yield test_client
-
-    return _get_test_client

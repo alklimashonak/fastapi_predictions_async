@@ -1,58 +1,44 @@
 import logging
 from typing import Sequence
+from uuid import UUID
 
-from fastapi import Depends
-from pydantic import UUID4
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
 
+from src.auth.base import BaseAuthService
 from src.auth.models import User
+from src.auth.repo import AuthRepository
 from src.auth.schemas import UserCreate
-from src.core.security import verify_password, get_password_hash
-from src.db.database import get_async_session
+from src.core.security import verify_password
 
 logger = logging.getLogger(__name__)
 
 
-class AuthService:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class AuthService(BaseAuthService):
+    def __init__(self, repo: AuthRepository):
+        self.repo = repo
 
     async def get_multiple(self) -> Sequence[User]:
-        stmt = select(User)
-        result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return await self.repo.get_multiple()
 
-    async def get_by_id(self, user_id: UUID4) -> User | None:
-        stmt = select(User).filter(User.id == user_id)
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+    async def get_by_id(self, user_id: UUID) -> User | None:
+        return await self.repo.get_by_id(user_id=user_id)
 
     async def get_by_email(self, email: str) -> User | None:
-        stmt = select(User).filter(User.email == email)
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        return await self.repo.get_by_email(email=email)
 
-    async def create(self, new_user: UserCreate) -> User | None:
-        user = User(
-            email=new_user.email,
-            hashed_password=get_password_hash(new_user.password),
-            is_active=True,
-            is_superuser=False,
-        )
-        self.session.add(user)
-        await self.session.commit()
-        await self.session.refresh(user)
-        return user
+    async def register(self, new_user: UserCreate) -> User:
+        user = await self.get_by_email(email=new_user.email)
 
-    async def authenticate(self, email: str, password: str) -> User | None:
+        if user:
+            raise HTTPException(
+                status_code=400,
+                detail="The user with this email already exists in the system.",
+            )
+        return await self.repo.create(new_user=new_user)
+
+    async def login(self, email: str, password: str) -> User | None:
         user = await self.get_by_email(email=email)
-        if not user:
-            return None
-        if not verify_password(password, user.hashed_password):
-            return None
+
+        if not user or not verify_password(password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Incorrect email or password")
         return user
-
-
-async def get_auth_service(session: AsyncSession = Depends(get_async_session)):
-    yield AuthService(session)

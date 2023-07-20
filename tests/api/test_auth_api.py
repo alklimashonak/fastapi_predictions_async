@@ -9,7 +9,7 @@ from httpx import AsyncClient
 from starlette import status
 
 from src.auth.router import router as auth_router
-from src.auth.service import get_auth_service
+from src.auth.dependencies import get_auth_service
 from tests.api.conftest import UserModel
 
 logger = logging.getLogger(__name__)

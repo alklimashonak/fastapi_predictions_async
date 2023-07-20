@@ -10,7 +10,7 @@ from starlette import status
 
 from src.auth.dependencies import get_current_user
 from src.predictions.router import router as prediction_router
-from src.predictions.service import get_prediction_service
+from src.predictions.dependencies import get_prediction_service
 from tests.api.conftest import UserModel, PredictionModel
 
 logger = logging.getLogger(__name__)

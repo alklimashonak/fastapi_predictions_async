@@ -1,49 +1,32 @@
 from typing import Sequence
 
-from fastapi import Depends
-from sqlalchemy import select, delete
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from fastapi import HTTPException
+from starlette import status
 
-from src.db.database import get_async_session
 from src.events.base import BaseEventService
-from src.events.models import Event, Match
-from src.events.schemas import EventCreate, MatchCreate
+from src.events.models import Event
+from src.events.repo import EventRepository
+from src.events.schemas import EventCreate
 
 
 class EventService(BaseEventService):
-    def __init__(self, session: AsyncSession):
-        self.session = session
+    def __init__(self, repo: EventRepository):
+        self.repo = repo
 
     async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[Event]:
-        stmt = select(Event).options(selectinload(Event.matches)).offset(offset).limit(limit)
-        result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return await self.repo.get_multiple(offset=offset, limit=limit)
 
     async def get_by_id(self, event_id: int) -> Event | None:
-        stmt = select(Event).where(Event.id == event_id).options(selectinload(Event.matches))
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        event = await self.repo.get_by_id(event_id=event_id)
+
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
+        return event
 
     async def create(self, event: EventCreate) -> Event:
-        new_event = Event(**event.dict(exclude={'matches'}))
-        self.session.add(new_event)
-        await self.session.flush([new_event])
-
-        await self._create_matches(matches=event.matches, event_id=new_event.id)
-
-        await self.session.commit()
-        return await self.get_by_id(event_id=new_event.id)
+        return await self.repo.create(event=event)
 
     async def delete(self, event_id: int) -> None:
-        stmt = delete(Event).where(Event.id == event_id)
-        await self.session.execute(stmt)
-        await self.session.commit()
+        await self.get_by_id(event_id=event_id)
 
-    async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
-        match_models = [Match(**match.dict(), event_id=event_id) for match in matches]
-        self.session.add_all(match_models)
-
-
-async def get_event_service(session: AsyncSession = Depends(get_async_session)):
-    yield EventService(session)
+        return await self.repo.delete(event_id=event_id)

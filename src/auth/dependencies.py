@@ -2,16 +2,27 @@ import logging
 
 from fastapi import Depends, HTTPException
 from jose import jwt, JWTError
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from src.auth.base import BaseAuthService
 from src.auth.models import User
+from src.auth.repo import AuthRepository
 from src.auth.schemas import TokenPayload
-from src.auth.service import get_auth_service
+from src.auth.service import AuthService
 from src.core.config import settings
 from src.core.security import oauth2_scheme, ALGORITHM
+from src.db.database import get_async_session
 
 logger = logging.getLogger(__name__)
+
+
+async def get_auth_repo(session: AsyncSession = Depends(get_async_session)):
+    yield AuthRepository(session)
+
+
+async def get_auth_service(repo: AuthRepository = Depends(get_auth_repo)):
+    yield AuthService(repo)
 
 
 async def get_current_user(

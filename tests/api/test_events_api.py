@@ -10,7 +10,7 @@ from starlette import status
 
 from src.auth.dependencies import get_current_user
 from src.events.router import router as event_router
-from src.events.service import get_event_service
+from src.events.dependencies import get_event_service
 from tests.api.conftest import UserModel
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class TestGetEvents:
 
 
 @pytest.mark.asyncio
-class TestGetEvent:
+class TestGetEventByID:
     async def test_get_event_works(self, async_client: AsyncClient) -> None:
         response = await async_client.get('/events/123')
 

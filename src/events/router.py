@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from starlette import status
 
 from src.auth.dependencies import get_current_superuser
 from src.events.base import BaseEventService
-from src.events.service import get_event_service
+from src.events.dependencies import get_event_service
 from src.events.schemas import EventRead, EventCreate
 
 
@@ -24,10 +24,7 @@ async def get_event(
         event_id: int,
         event_service: BaseEventService = Depends(get_event_service)
 ):
-    event = await event_service.get_by_id(event_id=event_id)
-    if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
-    return event
+    return await event_service.get_by_id(event_id=event_id)
 
 
 @router.post(
@@ -48,6 +45,4 @@ async def delete_event(
         event_id: int,
         event_service: BaseEventService = Depends(get_event_service)
 ):
-    if not await event_service.get_by_id(event_id=event_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
     return await event_service.delete(event_id=event_id)
