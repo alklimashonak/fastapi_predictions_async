@@ -15,7 +15,7 @@ class BasePredictionRepository:
     async def create(self, prediction: PredictionCreate, user_id: UUID) -> Prediction:
         raise NotImplementedError
 
-    async def update(self, prediction_id: int, prediction: PredictionUpdate) -> Prediction:
+    async def update(self, prediction_id: int, prediction: PredictionUpdate) -> Prediction | None:
         raise NotImplementedError
 
     async def exists_in_db(self, user_id: UUID, match_id: int) -> bool:

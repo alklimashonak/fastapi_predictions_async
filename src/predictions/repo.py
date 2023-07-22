@@ -41,7 +41,7 @@ class PredictionRepository(BasePredictionRepository):
 
         return new_prediction
 
-    async def update(self, prediction_id: int, prediction: PredictionUpdate) -> Prediction:
+    async def update(self, prediction_id: int, prediction: PredictionUpdate) -> Prediction | None:
         stmt = update(Prediction).values(**prediction.dict()).where(Prediction.id == prediction_id)
 
         await self.session.execute(stmt)
