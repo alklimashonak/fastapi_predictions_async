@@ -3,10 +3,10 @@ from typing import Sequence
 from uuid import UUID
 
 from fastapi import HTTPException
+from starlette import status
 
-from src.auth.base import BaseAuthService
+from src.auth.base import BaseAuthService, BaseAuthRepository
 from src.auth.models import User
-from src.auth.repo import AuthRepository
 from src.auth.schemas import UserCreate
 from src.core.security import verify_password
 
@@ -14,14 +14,18 @@ logger = logging.getLogger(__name__)
 
 
 class AuthService(BaseAuthService):
-    def __init__(self, repo: AuthRepository):
+    def __init__(self, repo: BaseAuthRepository):
         self.repo = repo
 
     async def get_multiple(self) -> Sequence[User]:
         return await self.repo.get_multiple()
 
-    async def get_by_id(self, user_id: UUID) -> User | None:
-        return await self.repo.get_by_id(user_id=user_id)
+    async def get_by_id(self, user_id: UUID) -> User:
+        user = await self.repo.get_by_id(user_id=user_id)
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='user not found')
+        return user
 
     async def get_by_email(self, email: str) -> User | None:
         return await self.repo.get_by_email(email=email)
