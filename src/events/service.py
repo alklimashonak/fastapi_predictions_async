@@ -3,14 +3,13 @@ from typing import Sequence
 from fastapi import HTTPException
 from starlette import status
 
-from src.events.base import BaseEventService
+from src.events.base import BaseEventService, BaseEventRepository
 from src.events.models import Event
-from src.events.repo import EventRepository
 from src.events.schemas import EventCreate
 
 
 class EventService(BaseEventService):
-    def __init__(self, repo: EventRepository):
+    def __init__(self, repo: BaseEventRepository):
         self.repo = repo
 
     async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[Event]:

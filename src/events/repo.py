@@ -38,6 +38,11 @@ class EventRepository(BaseEventRepository):
         await self.session.execute(stmt)
         await self.session.commit()
 
+    async def _get_match_by_id(self, match_id: int) -> Match | None:
+        stmt = select(Match).where(Match.id == match_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
         match_models = [Match(**match.dict(), event_id=event_id) for match in matches]
         self.session.add_all(match_models)

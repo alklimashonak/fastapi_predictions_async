@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from src.events.models import Event
+from src.events.models import Event, Match
 from src.events.schemas import EventCreate, MatchCreate
 
 
@@ -18,6 +18,9 @@ class BaseEventRepository:
         raise NotImplementedError
 
     async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
+        raise NotImplementedError
+
+    async def _get_match_by_id(self, match_id: int) -> Match | None:
         raise NotImplementedError
 
 
