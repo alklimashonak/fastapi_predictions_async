@@ -1,13 +1,22 @@
 import dataclasses
+import logging
 from datetime import datetime
 from itertools import count
+from typing import Sequence
 from uuid import UUID, uuid4
 
 import pytest
 
 from src.auth.base import BaseAuthRepository
+from src.auth.schemas import UserCreate
 from src.core.security import get_password_hash
+from src.events.base import BaseEventRepository
 from src.events.models import Status
+from src.events.schemas import EventCreate, MatchCreate
+from src.predictions.base import BasePredictionRepository
+from src.predictions.schemas import PredictionCreate, PredictionUpdate
+
+logger = logging.getLogger(__name__)
 
 user_password = 'user'
 superuser_password = 'admin'
@@ -118,125 +127,113 @@ def prediction2(superuser: UserModel, match1: MatchModel) -> PredictionModel:
 
 
 @pytest.fixture(scope='session')
-def fake_get_auth_repo(active_user: UserModel, superuser: UserModel):
-    def _fake_get_auth_repo() -> BaseAuthRepository:
-        class MockAuthService(BaseAuthRepository):
-            users = [active_user, superuser]
+def mock_auth_repo(active_user: UserModel, superuser: UserModel):
+    class MockAuthRepository(BaseAuthRepository):
+        users = [active_user, superuser]
 
-            async def get_multiple(self) -> list[UserModel]:
-                return self.users
+        async def get_multiple(self) -> Sequence[UserModel]:
+            return self.users
 
-            async def get_by_id(self, user_id: UUID) -> UserModel | None:
-                for user in self.users:
-                    if user.id == user_id:
-                        return user
-                return None
+        async def get_by_id(self, user_id: UUID) -> UserModel | None:
+            for user in self.users:
+                if user.id == user_id:
+                    return user
+            return None
 
-            async def get_by_email(self, email: str) -> UserModel | None:
-                for user in self.users:
-                    if user.email == email:
-                        return user
-                return None
+        async def get_by_email(self, email: str) -> UserModel | None:
+            for user in self.users:
+                if user.email == email:
+                    return user
+            return None
 
-            async def register(self, new_user: UserCreate) -> UserModel:
-                user = await self.get_by_email(email=new_user.email)
+        async def create(self, new_user: UserCreate) -> UserModel:
+            hashed_password = get_password_hash(new_user.password)
+            user = UserModel(
+                **new_user.dict(exclude={'password'}, exclude_none=True),
+                hashed_password=hashed_password,
+                is_active=True,
+                is_superuser=False,
+            )
+            return user
 
-                if user:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="The user with this email already exists in the system.",
-                    )
-
-                hashed_password = get_password_hash(new_user.password)
-                user = UserModel(
-                    **new_user.dict(exclude={'password'}, exclude_none=True),
-                    hashed_password=hashed_password,
-                    is_active=True,
-                    is_superuser=False,
-                )
-                return user
-
-            async def login(self, email: str, password: str) -> UserModel | None:
-                for user in self.users:
-                    if user.email == email and verify_password(password, user.hashed_password):
-                        return user
-                raise HTTPException(status_code=400, detail="Incorrect email or password")
-
-        yield MockAuthService()
-
-    return _fake_get_auth_service
+    yield MockAuthRepository()
 
 
 @pytest.fixture(scope='session')
-def fake_get_event_service(event1: EventModel):
-    def _fake_get_event_service() -> BaseEventService:
-        class MockEventService(BaseEventService):
-            events = [event1]
+def mock_event_repo(event1: EventModel, match1: MatchModel):
+    class MockEventRepository(BaseEventRepository):
+        events = [event1]
+        matches = [match1]
 
-            async def get_multiple(self, offset: int = 0, limit: int = 100) -> list[EventModel]:
-                if offset > 0 or limit < 1:
-                    return []
-                return self.events
+        async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[EventModel]:
+            if offset > 0 or limit < 1:
+                return []
+            return self.events
 
-            async def get_by_id(self, event_id: int) -> EventModel | None:
-                for event in self.events:
-                    if event.id == event_id:
-                        return event
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
+        async def get_by_id(self, event_id: int) -> EventModel | None:
+            for event in self.events:
+                if event.id == event_id:
+                    return event
+            return
 
-            async def create(self, event: EventCreate) -> EventModel:
-                new_event = EventModel(**event.dict())
-                matches = [MatchModel(**match.dict(), event_id=new_event.id) for match in event.matches]
-                new_event.matches = matches
-                return new_event
+        async def create(self, event: EventCreate) -> EventModel:
+            new_event = EventModel(**event.dict())
+            matches = [MatchModel(**match.dict(), event_id=new_event.id) for match in event.matches]
+            new_event.matches = matches
+            return new_event
 
-            async def delete(self, event_id: int) -> None:
-                await self.get_by_id(event_id=event_id)
+        async def delete(self, event_id: int) -> None:
+            return
 
-        yield MockEventService()
+        async def _get_match_by_id(self, match_id: int) -> MatchModel | None:
+            for match in self.matches:
+                if match.id == match_id:
+                    return match
+            return
 
-    return _fake_get_event_service
+        async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
+            pass
+
+    yield MockEventRepository()
 
 
 @pytest.fixture(scope='session')
-def fake_get_prediction_service(prediction1: PredictionModel, prediction2: PredictionModel, event1: EventModel):
-    def _fake_get_prediction_service() -> BasePredictionService:
-        class MockPredictionService(BasePredictionService):
-            predictions = [prediction1, prediction2]
+def mock_prediction_repo(prediction1: PredictionModel, prediction2: PredictionModel, event1: EventModel):
+    class MockPredictionRepository(BasePredictionRepository):
+        predictions = [prediction1, prediction2]
 
-            async def get_multiple_by_event_id(self, event_id: int, user_id: UUID) -> list[PredictionModel]:
-                event_matches = [match.id for match in event1.matches]
-                return [prediction for prediction in self.predictions if
-                        prediction.user_id == user_id and prediction.match_id in event_matches]
+        async def get_multiple_by_event_id(self, event_id: int, user_id: UUID) -> list[PredictionModel]:
+            event_matches = [match.id for match in event1.matches]
+            return [prediction for prediction in self.predictions if
+                    prediction.user_id == user_id and prediction.match_id in event_matches]
 
-            async def get_by_id(self, prediction_id: int) -> PredictionModel | None:
-                for prediction in self.predictions:
-                    if prediction.id == prediction_id:
-                        return prediction
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Prediction not found')
+        async def get_by_id(self, prediction_id: int) -> PredictionModel | None:
+            for prediction in self.predictions:
+                if prediction.id == prediction_id:
+                    return prediction
+            return
 
-            async def create(self, prediction: PredictionCreate, user_id: UUID) -> PredictionModel:
-                for predict in self.predictions:
-                    if predict.match_id == prediction.match_id and predict.user_id == user_id:
-                        raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail='Prediction for this match already exists',
-                        )
-                return PredictionModel(**prediction.dict(), user_id=user_id)
+        async def create(self, prediction: PredictionCreate, user_id: UUID) -> PredictionModel:
+            return PredictionModel(**prediction.dict(), user_id=user_id)
 
-            async def update(self, prediction_id: int, prediction: PredictionUpdate, user_id: UUID) -> PredictionModel:
-                prediction_to_update = await self.get_by_id(prediction_id=prediction_id)
-                if prediction_to_update.user_id != user_id:
-                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                                        detail='You can only edit your own predictions')
-                return PredictionModel(
-                    id=prediction_id,
-                    home_goals=prediction.home_goals,
-                    away_goals=prediction.away_goals,
-                    match_id=prediction_to_update.match_id,
-                    user_id=prediction_to_update.user_id,
-                )
+        async def update(self, prediction_id: int, prediction: PredictionUpdate) -> PredictionModel | None:
+            prediction_to_update = await self.get_by_id(prediction_id=prediction_id)
 
-        yield MockPredictionService()
+            if not prediction_to_update:
+                return
 
-    return _fake_get_prediction_service
+            return PredictionModel(
+                id=prediction_id,
+                home_goals=prediction.home_goals,
+                away_goals=prediction.away_goals,
+                match_id=prediction_to_update.match_id,
+                user_id=prediction_to_update.user_id,
+            )
+
+        async def exists_in_db(self, user_id: UUID, match_id: int) -> bool:
+            for prediction in self.predictions:
+                if prediction.user_id == user_id and prediction.match_id == match_id:
+                    return True
+            return False
+
+    yield MockPredictionRepository()

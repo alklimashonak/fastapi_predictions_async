@@ -141,7 +141,7 @@ def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
                 for user in self.users:
                     if user.id == user_id:
                         return user
-                return None
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='user not found')
 
             async def get_by_email(self, email: str) -> UserModel | None:
                 for user in self.users:
