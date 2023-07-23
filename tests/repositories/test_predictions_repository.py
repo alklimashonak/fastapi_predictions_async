@@ -56,24 +56,6 @@ class TestCreatePrediction:
         assert prediction.home_goals == prediction_data.home_goals
         assert prediction.away_goals == prediction_data.away_goals
 
-    @pytest.mark.skip
-    async def test_prediction_already_exists_raise_http_error(
-            self,
-            test_prediction: Prediction,
-            prediction_repo: BasePredictionRepository,
-    ) -> None:
-        prediction_data = PredictionCreate(
-            home_goals=2,
-            away_goals=2,
-            match_id=test_prediction.match_id,
-        )
-
-        with pytest.raises(HTTPException) as exc:
-            await prediction_repo.create(prediction=prediction_data, user_id=test_prediction.user_id)
-
-        assert exc.value.status_code == 400
-        assert exc.value.detail == 'Prediction for this match already exists'
-
 
 @pytest.mark.asyncio
 class TestPredictionUpdate:
