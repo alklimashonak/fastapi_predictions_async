@@ -4,6 +4,7 @@ import pytest
 from fastapi import HTTPException
 
 from src.events.base import BaseEventRepository, BaseEventService
+from src.events.models import Status
 from src.events.schemas import EventCreate, MatchCreate
 from src.events.service import EventService
 from tests.services.conftest import EventModel
@@ -52,7 +53,6 @@ class TestCreate:
     ) -> None:
         new_event = EventCreate(
             name='new event',
-            status=0,
             deadline=datetime.utcnow(),
             matches=[],
         )
@@ -61,7 +61,7 @@ class TestCreate:
 
         assert hasattr(event, 'id')
         assert event.name == new_event.name
-        assert event.status == new_event.status
+        assert event.status == Status.not_started
         assert event.deadline == new_event.deadline
         assert event.matches == new_event.matches
 
@@ -71,7 +71,6 @@ class TestCreate:
     ) -> None:
         new_event = EventCreate(
             name='new event',
-            status=0,
             deadline=datetime.utcnow(),
             matches=[
                 MatchCreate(
@@ -86,7 +85,7 @@ class TestCreate:
 
         assert hasattr(event, 'id')
         assert event.name == new_event.name
-        assert event.status == new_event.status
+        assert event.status == Status.not_started
         assert event.deadline == new_event.deadline
         assert len(event.matches) == len(new_event.matches)
 

@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 
 class EventBase(BaseModel):
     name: str | None = None
-    status: int | None = None
     deadline: datetime | None = None
 
 
@@ -26,7 +25,6 @@ class MatchCreate(MatchBase):
 
 class EventCreate(EventBase):
     name: str = Field(max_length=128)
-    status: int = Field(default=0)
     deadline: datetime = Field(default=datetime.utcnow()+timedelta(days=1))
     matches: list[MatchCreate] = []
 
