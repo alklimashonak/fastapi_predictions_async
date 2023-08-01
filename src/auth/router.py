@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
 from src.auth.schemas import Token, UserRead, UserCreate
-from src.auth.dependencies import get_auth_service
+from src.auth.dependencies import get_auth_service, get_current_user
 from src.auth.service import AuthService
 from src.core import security
 from src.core.config import settings
@@ -36,6 +36,11 @@ async def register(
     auth_service: AuthService = Depends(get_auth_service),
 ):
     return await auth_service.register(new_user=new_user)
+
+
+@router.get('/users/me', response_model=UserRead)
+async def get_current_user(current_user: UserRead = Depends(get_current_user)):
+    return current_user
 
 
 @router.get('/users', response_model=list[UserRead])
