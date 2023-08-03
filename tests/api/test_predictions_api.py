@@ -42,7 +42,7 @@ async def async_client(
 @pytest.mark.asyncio
 class TestGetPredictions:
     async def test_missing_token(self, async_client: AsyncClient) -> None:
-        response = await async_client.get('/events/123/predictions')
+        response = await async_client.get('/predictions/123')
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.json()['detail'] == 'Not authenticated'
@@ -54,12 +54,12 @@ class TestGetPredictions:
             superuser: UserModel,
     ) -> None:
         user_response = await async_client.get(
-            '/events/123/predictions',
+            '/predictions/123',
             headers={'Authorization': active_user.email}
         )
 
         superuser_response = await async_client.get(
-            '/events/123/predictions',
+            '/predictions/123',
             headers={'Authorization': superuser.email}
         )
 
