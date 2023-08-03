@@ -15,11 +15,11 @@ class EventService(BaseEventService):
     async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[Event]:
         return await self.repo.get_multiple(offset=offset, limit=limit)
 
-    async def get_by_id(self, event_id: int) -> Event | None:
+    async def get_by_id(self, event_id: int) -> Event:
         event = await self.repo.get_by_id(event_id=event_id)
 
         if not event:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
         return event
 
     async def create(self, event: EventCreate) -> Event:

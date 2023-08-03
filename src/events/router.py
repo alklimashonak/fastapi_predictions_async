@@ -6,7 +6,6 @@ from src.events.base import BaseEventService
 from src.events.dependencies import get_event_service
 from src.events.schemas import EventRead, EventCreate
 
-
 router = APIRouter()
 
 

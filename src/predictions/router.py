@@ -11,7 +11,7 @@ from src.predictions.service import PredictionService
 router = APIRouter()
 
 
-@router.get('/events/{event_id}/predictions', response_model=list[PredictionRead])
+@router.get('/predictions/{event_id}', response_model=list[PredictionRead])
 async def get_predictions(
         event_id: int,
         current_user: UserRead = Depends(get_current_user),
