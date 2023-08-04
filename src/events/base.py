@@ -17,6 +17,9 @@ class BaseEventRepository:
     async def delete(self, event_id: int) -> None:
         raise NotImplementedError
 
+    async def create_match(self, match: MatchCreate, event_id: int) -> Match:
+        raise NotImplementedError
+
     async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
         raise NotImplementedError
 
@@ -35,4 +38,7 @@ class BaseEventService:
         raise NotImplementedError
 
     async def delete(self, event_id: int) -> None:
+        raise NotImplementedError
+
+    async def create_match(self, match: MatchCreate, event_id: int) -> Match:
         raise NotImplementedError

@@ -98,3 +98,28 @@ class TestCreateMatches:
         refreshed_event = await event_repo.get_by_id(event_id=test_event.id)
 
         assert len(refreshed_event.matches) == len(test_event.matches) + 2
+
+
+@pytest.mark.asyncio
+class TestCreateMatch:
+    async def test_create_match_works(self, test_event: Event, event_repo: BaseEventRepository) -> None:
+        home_team = 'Borussia'
+        away_team = 'Atalanta'
+        start_time = datetime.now(tz=timezone.utc)
+        new_match = MatchCreate(
+            home_team=home_team,
+            away_team=away_team,
+            start_time=start_time,
+        )
+
+        match = await event_repo.create_match(match=new_match, event_id=test_event.id)
+        updated_event = await event_repo.get_by_id(event_id=test_event.id)
+
+        assert match.id
+        assert match.home_team == home_team
+        assert match.away_team == away_team
+        assert match.start_time == start_time
+        assert match.status == 0
+        assert match.event_id == test_event.id
+
+        assert len(updated_event.matches) > len(test_event.matches)

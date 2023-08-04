@@ -16,7 +16,7 @@ from src.auth.schemas import UserCreate
 from src.core.security import get_password_hash, verify_password
 from src.events.base import BaseEventService
 from src.events.models import Status
-from src.events.schemas import EventCreate
+from src.events.schemas import EventCreate, MatchCreate
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 
@@ -203,6 +203,10 @@ def fake_get_event_service(event1: EventModel):
 
             async def delete(self, event_id: int) -> None:
                 await self.get_by_id(event_id=event_id)
+
+            async def create_match(self, match: MatchCreate, event_id: int) -> MatchModel:
+                match = MatchModel(**match.dict(), event_id=event_id)
+                return match
 
         yield MockEventService()
 

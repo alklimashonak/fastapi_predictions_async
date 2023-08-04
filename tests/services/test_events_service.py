@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from fastapi import HTTPException
+from pydantic.error_wrappers import ValidationError
 
 from src.events.base import BaseEventRepository, BaseEventService
 from src.events.models import Status
@@ -107,3 +108,27 @@ class TestDelete:
     ) -> None:
         with pytest.raises(HTTPException):
             await event_service.delete(event_id=9299)
+
+
+@pytest.mark.asyncio
+class TestCreateMatch:
+    async def test_create_valid_data_works(self, event_service: BaseEventService, event1: EventModel) -> None:
+        home_team = 'Everton'
+        away_team = 'Bayern'
+        start_time = datetime.now(tz=timezone.utc)
+
+        new_match = MatchCreate(
+            home_team=home_team,
+            away_team=away_team,
+            start_time=start_time,
+        )
+
+        match = await event_service.create_match(match=new_match, event_id=event1.id)
+
+        assert hasattr(match, 'id')
+        assert match.status == Status.not_started
+        assert match.home_team == home_team
+        assert match.away_team == away_team
+        assert match.home_goals is None
+        assert match.away_goals is None
+        assert match.start_time == start_time

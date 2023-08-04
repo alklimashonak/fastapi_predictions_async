@@ -4,7 +4,7 @@ from starlette import status
 from src.auth.dependencies import get_current_superuser
 from src.events.base import BaseEventService
 from src.events.dependencies import get_event_service
-from src.events.schemas import EventRead, EventCreate
+from src.events.schemas import EventRead, EventCreate, MatchCreate, MatchRead
 
 router = APIRouter()
 
@@ -45,3 +45,17 @@ async def delete_event(
         event_service: BaseEventService = Depends(get_event_service)
 ):
     return await event_service.delete(event_id=event_id)
+
+
+@router.post(
+    '/{event_id}/matches',
+    response_model=MatchRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_current_superuser)],
+)
+async def create_match(
+        event_id: int,
+        match: MatchCreate,
+        event_service: BaseEventService = Depends(get_event_service)
+):
+    return await event_service.create_match(match=match, event_id=event_id)

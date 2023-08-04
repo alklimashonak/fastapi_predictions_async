@@ -4,8 +4,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from src.events.base import BaseEventService, BaseEventRepository
-from src.events.models import Event
-from src.events.schemas import EventCreate
+from src.events.models import Event, Match
+from src.events.schemas import EventCreate, MatchCreate
 
 
 class EventService(BaseEventService):
@@ -29,3 +29,6 @@ class EventService(BaseEventService):
         await self.get_by_id(event_id=event_id)
 
         return await self.repo.delete(event_id=event_id)
+
+    async def create_match(self, match: MatchCreate, event_id: int) -> Match:
+        return await self.repo.create_match(match=match, event_id=event_id)

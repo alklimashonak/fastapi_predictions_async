@@ -120,3 +120,40 @@ class TestDeleteEvent:
         response = await async_client.delete('/events/123', headers={'Authorization': superuser.email})
 
         assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.asyncio
+class TestCreateMatch:
+    json = {
+        'home_team': 'Atalanta',
+        'away_team': 'Bari',
+        'start_time': '2023-09-20 10:27:21.240752',
+    }
+
+    async def test_missing_token(self, async_client: AsyncClient) -> None:
+        response = await async_client.post(
+            '/events/123/matches',
+            json=self.json
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()['detail'] == 'Not authenticated'
+
+    async def test_forbidden(self, async_client: AsyncClient, active_user: UserModel) -> None:
+        response = await async_client.post(
+            '/events/123/matches',
+            json=self.json,
+            headers={'Authorization': active_user.email}
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_superuser_has_access(self, async_client: AsyncClient, superuser: UserModel) -> None:
+        response = await async_client.post(
+            '/events/123/matches',
+            json=self.json,
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()['home_team'] == 'Atalanta'

@@ -185,6 +185,10 @@ def mock_event_repo(event1: EventModel, match1: MatchModel):
         async def delete(self, event_id: int) -> None:
             return
 
+        async def create_match(self, match: MatchCreate, event_id: int) -> MatchModel:
+            new_match = MatchModel(**match.dict(), event_id=event_id)
+            return new_match
+
         async def _get_match_by_id(self, match_id: int) -> MatchModel | None:
             for match in self.matches:
                 if match.id == match_id:

@@ -38,6 +38,14 @@ class EventRepository(BaseEventRepository):
         await self.session.execute(stmt)
         await self.session.commit()
 
+    async def create_match(self, match: MatchCreate, event_id: int) -> Match:
+        new_match = Match(**match.dict(), event_id=event_id)
+
+        self.session.add(new_match)
+        await self.session.commit()
+        await self.session.refresh(new_match)
+        return new_match
+
     async def _get_match_by_id(self, match_id: int) -> Match | None:
         stmt = select(Match).where(Match.id == match_id)
         result = await self.session.execute(stmt)

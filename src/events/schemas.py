@@ -17,7 +17,7 @@ class MatchBase(BaseModel):
     start_time: datetime | None = None
 
 
-class MatchCreate(MatchBase):
+class MatchCreate(BaseModel):
     home_team: str = Field(max_length=128)
     away_team: str = Field(max_length=128)
     start_time: datetime = Field(default=datetime.utcnow()+timedelta(days=1))
