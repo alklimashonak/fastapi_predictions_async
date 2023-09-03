@@ -157,3 +157,18 @@ class TestCreateMatch:
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()['home_team'] == 'Atalanta'
+
+    async def test_too_short_team_name_raises_422(self, async_client: AsyncClient, superuser: UserModel) -> None:
+        invalid_data = {
+            'home_team': '',
+            'away_team': '',
+            'start_data': '2023-09-20 10:27:21.240752',
+        }
+
+        response = await async_client.post(
+            '/events/123/matches',
+            json=invalid_data,
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

@@ -18,8 +18,8 @@ class MatchBase(BaseModel):
 
 
 class MatchCreate(BaseModel):
-    home_team: str = Field(max_length=128)
-    away_team: str = Field(max_length=128)
+    home_team: str = Field(max_length=128, min_length=3)
+    away_team: str = Field(max_length=128, min_length=3)
     start_time: datetime = Field(default=datetime.utcnow()+timedelta(days=1))
 
 
