@@ -30,5 +30,17 @@ class EventService(BaseEventService):
 
         return await self.repo.delete(event_id=event_id)
 
+    async def get_match_by_id(self, match_id: int) -> Match:
+        match = await self.repo._get_match_by_id(match_id=match_id)
+
+        if not match:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
+        return match
+
     async def create_match(self, match: MatchCreate, event_id: int) -> Match:
         return await self.repo.create_match(match=match, event_id=event_id)
+
+    async def delete_match_by_id(self, match_id: int) -> None:
+        await self.get_match_by_id(match_id=match_id)
+
+        return await self.repo.delete_match_by_id(match_id=match_id)

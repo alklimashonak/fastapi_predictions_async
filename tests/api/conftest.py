@@ -185,14 +185,11 @@ def fake_get_event_service(event1: EventModel):
             events = [event1]
 
             async def get_multiple(self, offset: int = 0, limit: int = 100) -> list[EventModel]:
-                if offset > 0 or limit < 1:
-                    return []
-                return self.events
+                return [event1]
 
             async def get_by_id(self, event_id: int) -> EventModel | None:
-                for event in self.events:
-                    if event.id == event_id:
-                        return event
+                if event_id == event1.id:
+                    return event1
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
 
             async def create(self, event: EventCreate) -> EventModel:
@@ -204,9 +201,16 @@ def fake_get_event_service(event1: EventModel):
             async def delete(self, event_id: int) -> None:
                 await self.get_by_id(event_id=event_id)
 
+            async def get_match_by_id(self, match_id: int) -> MatchModel:
+                if match_id == event1.matches[0].id:
+                    return event1.matches[0]
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='match not found')
+
             async def create_match(self, match: MatchCreate, event_id: int) -> MatchModel:
-                match = MatchModel(**match.dict(), event_id=event_id)
-                return match
+                return MatchModel(**match.dict(), event_id=event_id)
+
+            async def delete_match_by_id(self, match_id: int) -> None:
+                await self.get_match_by_id(match_id=match_id)
 
         yield MockEventService()
 

@@ -56,6 +56,18 @@ async def delete_event(
 async def create_match(
         event_id: int,
         match: MatchCreate,
-        event_service: BaseEventService = Depends(get_event_service)
+        event_service: BaseEventService = Depends(get_event_service),
 ):
     return await event_service.create_match(match=match, event_id=event_id)
+
+
+@router.delete(
+    '/matches/{match_id}',
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(get_current_superuser)],
+)
+async def delete_match(
+        match_id: int,
+        event_service: BaseEventService = Depends(get_event_service),
+):
+    return await event_service.delete_match_by_id(match_id=match_id)

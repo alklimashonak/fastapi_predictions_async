@@ -171,9 +171,8 @@ def mock_event_repo(event1: EventModel, match1: MatchModel):
             return self.events
 
         async def get_by_id(self, event_id: int) -> EventModel | None:
-            for event in self.events:
-                if event.id == event_id:
-                    return event
+            if event_id == event1.id:
+                return event1
             return
 
         async def create(self, event: EventCreate) -> EventModel:
@@ -186,17 +185,18 @@ def mock_event_repo(event1: EventModel, match1: MatchModel):
             return
 
         async def create_match(self, match: MatchCreate, event_id: int) -> MatchModel:
-            new_match = MatchModel(**match.dict(), event_id=event_id)
-            return new_match
+            return MatchModel(**match.dict(), event_id=event_id)
 
         async def _get_match_by_id(self, match_id: int) -> MatchModel | None:
-            for match in self.matches:
-                if match.id == match_id:
-                    return match
+            if match_id == match1.id:
+                return match1
             return
 
         async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
             pass
+
+        async def delete_match_by_id(self, match_id: int) -> None:
+            return
 
     yield MockEventRepository()
 

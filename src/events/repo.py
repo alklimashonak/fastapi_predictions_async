@@ -54,3 +54,8 @@ class EventRepository(BaseEventRepository):
     async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
         match_models = [Match(**match.dict(), event_id=event_id) for match in matches]
         self.session.add_all(match_models)
+
+    async def delete_match_by_id(self, match_id: int) -> None:
+        stmt = delete(Match).where(Match.id == match_id)
+        await self.session.execute(stmt)
+        await self.session.commit()

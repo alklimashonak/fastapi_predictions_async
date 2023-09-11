@@ -132,3 +132,22 @@ class TestCreateMatch:
         assert match.home_goals is None
         assert match.away_goals is None
         assert match.start_time == start_time
+
+
+@pytest.mark.asyncio
+class TestDeleteMatch:
+    async def test_delete_match_returns_none_if_event_exists(
+            self,
+            event_service: BaseEventService,
+            event1: EventModel,
+    ) -> None:
+        deleted_event = await event_service.delete_match_by_id(match_id=event1.matches[0].id)
+
+        assert not deleted_event
+
+    async def test_delete_match_not_existed_event_raises_exc(
+            self,
+            event_service: BaseEventService,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await event_service.delete_match_by_id(match_id=9299)

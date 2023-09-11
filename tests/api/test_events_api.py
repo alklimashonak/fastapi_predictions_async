@@ -172,3 +172,36 @@ class TestCreateMatch:
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.asyncio
+class TestDeleteMatch:
+    async def test_missing_token(self, async_client: AsyncClient) -> None:
+        response = await async_client.delete(
+            '/events/matches/123',
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()['detail'] == 'Not authenticated'
+
+    async def test_forbidden(self, async_client: AsyncClient, active_user: UserModel) -> None:
+        response = await async_client.delete(
+            '/events/matches/123',
+            headers={'Authorization': active_user.email},
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_match_not_found(self, async_client: AsyncClient, superuser: UserModel) -> None:
+        response = await async_client.delete('/events/matches/99999', headers={'Authorization': superuser.email})
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json()['detail'] == 'match not found'
+
+    async def test_superuser_has_access(self, async_client: AsyncClient, superuser: UserModel) -> None:
+        response = await async_client.delete(
+            '/events/matches/123',
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_200_OK

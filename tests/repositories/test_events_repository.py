@@ -123,3 +123,15 @@ class TestCreateMatch:
         assert match.event_id == test_event.id
 
         assert len(updated_event.matches) > len(test_event.matches)
+
+
+@pytest.mark.asyncio
+class TestDeleteMatch:
+    async def test_delete_match_works(self, test_event: Event, event_repo: BaseEventRepository) -> None:
+        event = await event_repo.get_by_id(event_id=test_event.id)
+        assert len(event.matches) == 2
+
+        await event_repo.delete_match_by_id(match_id=test_event.matches[0].id)
+        await event_repo.session.refresh(event)
+
+        assert len(event.matches) == 1

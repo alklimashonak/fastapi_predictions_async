@@ -26,6 +26,9 @@ class BaseEventRepository:
     async def _get_match_by_id(self, match_id: int) -> Match | None:
         raise NotImplementedError
 
+    async def delete_match_by_id(self, match_id: int) -> None:
+        raise NotImplementedError
+
 
 class BaseEventService:
     async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[Event]:
@@ -40,5 +43,11 @@ class BaseEventService:
     async def delete(self, event_id: int) -> None:
         raise NotImplementedError
 
+    async def get_match_by_id(self, match_id: int) -> Match:
+        raise NotImplementedError
+
     async def create_match(self, match: MatchCreate, event_id: int) -> Match:
+        raise NotImplementedError
+
+    async def delete_match_by_id(self, match_id: int) -> None:
         raise NotImplementedError
