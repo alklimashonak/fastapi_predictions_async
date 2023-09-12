@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     TESTING: bool = False
 
     SECRET_KEY: str = 'secret'
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 180
 
     DATABASE_URL_SQLITE: str = 'sqlite+aiosqlite:///./predictions.db'
     TEST_DATABASE_URL_SQLITE: str = "sqlite+aiosqlite:///./predictions_test.db"

@@ -13,8 +13,20 @@ class EventRepository(BaseEventRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[Event]:
-        stmt = select(Event).options(selectinload(Event.matches)).offset(offset).limit(limit)
+    async def get_multiple(self, admin_mode: bool = False, offset: int = 0, limit: int = 100) -> Sequence[Event]:
+        if admin_mode:
+            stmt = select(Event) \
+                .options(selectinload(Event.matches)) \
+                .order_by(Event.deadline) \
+                .offset(offset) \
+                .limit(limit)
+        else:
+            stmt = select(Event) \
+                .options(selectinload(Event.matches)) \
+                .filter(Event.status > 0) \
+                .order_by(Event.deadline) \
+                .offset(offset) \
+                .limit(limit)
         result = await self.session.execute(stmt)
         return result.scalars().all()
 

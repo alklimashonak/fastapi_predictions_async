@@ -165,7 +165,11 @@ def mock_event_repo(event1: EventModel, match1: MatchModel):
         events = [event1]
         matches = [match1]
 
-        async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[EventModel]:
+        async def get_multiple(
+                self,
+                admin_mode: bool = False,
+                offset: int = 0, limit: int = 100
+        ) -> Sequence[EventModel]:
             if offset > 0 or limit < 1:
                 return []
             return self.events

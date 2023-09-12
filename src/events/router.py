@@ -12,10 +12,11 @@ router = APIRouter()
 @router.get('', response_model=list[EventRead], response_model_exclude={'matches'})
 async def get_events(
         event_service: BaseEventService = Depends(get_event_service),
+        admin_mode: bool = False,
         offset: int = 0,
         limit: int = 100,
 ):
-    return await event_service.get_multiple(offset=offset, limit=limit)
+    return await event_service.get_multiple(admin_mode=admin_mode, offset=offset, limit=limit)
 
 
 @router.get('/{event_id}', response_model=EventRead)

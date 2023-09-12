@@ -184,7 +184,12 @@ def fake_get_event_service(event1: EventModel):
         class MockEventService(BaseEventService):
             events = [event1]
 
-            async def get_multiple(self, offset: int = 0, limit: int = 100) -> list[EventModel]:
+            async def get_multiple(
+                    self,
+                    admin_mode: bool = False,
+                    offset: int = 0,
+                    limit: int = 100
+            ) -> list[EventModel]:
                 return [event1]
 
             async def get_by_id(self, event_id: int) -> EventModel | None:

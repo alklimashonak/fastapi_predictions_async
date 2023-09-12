@@ -12,8 +12,8 @@ class EventService(BaseEventService):
     def __init__(self, repo: BaseEventRepository):
         self.repo = repo
 
-    async def get_multiple(self, offset: int = 0, limit: int = 100) -> Sequence[Event]:
-        return await self.repo.get_multiple(offset=offset, limit=limit)
+    async def get_multiple(self, admin_mode: bool = False, offset: int = 0, limit: int = 100) -> Sequence[Event]:
+        return await self.repo.get_multiple(admin_mode=admin_mode, offset=offset, limit=limit)
 
     async def get_by_id(self, event_id: int) -> Event:
         event = await self.repo.get_by_id(event_id=event_id)
