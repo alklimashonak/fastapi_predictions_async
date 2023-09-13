@@ -185,6 +185,12 @@ def mock_event_repo(event1: EventModel, match1: MatchModel):
             new_event.matches = matches
             return new_event
 
+        async def run(self, event_id: int) -> EventModel | None:
+            if event_id == event1.id:
+                event1.status = Status.in_process
+                return event1
+            return
+
         async def delete(self, event_id: int) -> None:
             return
 

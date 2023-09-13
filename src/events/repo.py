@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.events.base import BaseEventRepository
-from src.events.models import Event, Match
+from src.events.models import Event, Match, Status
 from src.events.schemas import EventCreate, MatchCreate
 
 
@@ -23,7 +23,7 @@ class EventRepository(BaseEventRepository):
         else:
             stmt = select(Event) \
                 .options(selectinload(Event.matches)) \
-                .filter(Event.status > 0) \
+                .filter(Event.status != Status.not_started) \
                 .order_by(Event.deadline) \
                 .offset(offset) \
                 .limit(limit)
@@ -44,6 +44,13 @@ class EventRepository(BaseEventRepository):
 
         await self.session.commit()
         return await self.get_by_id(event_id=new_event.id)
+
+    async def run(self, event_id: int) -> Event:
+        event = await self.get_by_id(event_id=event_id)
+        event.status = 1
+        await self.session.commit()
+        await self.session.refresh(event)
+        return event
 
     async def delete(self, event_id: int) -> None:
         stmt = delete(Event).where(Event.id == event_id)

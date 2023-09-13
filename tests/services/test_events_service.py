@@ -92,6 +92,39 @@ class TestCreate:
 
 
 @pytest.mark.asyncio
+class TestUpdate:
+    async def test_run_not_existed_event_raises_err(
+            self,
+            event_service: BaseEventService,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await event_service.run(event_id=99213)
+
+    async def test_run_event_in_progress_raises_err(
+            self,
+            event_service: BaseEventService,
+            event1: EventModel,
+    ) -> None:
+        event1.status = Status.in_process
+
+        with pytest.raises(HTTPException):
+            await event_service.run(event_id=event1.id)
+
+        event1.status = Status.not_started
+
+    async def test_run_not_started_event_returns_updated_event(
+            self,
+            event_service: BaseEventService,
+            event1: EventModel,
+    ) -> None:
+        assert event1.status == Status.not_started
+
+        updated_event = await event_service.run(event_id=event1.id)
+
+        assert updated_event.status == Status.in_process
+
+
+@pytest.mark.asyncio
 class TestDelete:
     async def test_delete_returns_none_if_event_exists(
             self,

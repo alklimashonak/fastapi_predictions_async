@@ -62,6 +62,18 @@ class TestCreateEvent:
 
 
 @pytest.mark.asyncio
+class TestUpdateEvent:
+    async def test_run_not_started_event_works(self, test_event: Event, event_repo: BaseEventRepository) -> None:
+        assert test_event.status == 0
+
+        await event_repo.run(event_id=test_event.id)
+
+        updated_event = await event_repo.get_by_id(event_id=test_event.id)
+
+        assert updated_event.status == 1
+
+
+@pytest.mark.asyncio
 class TestDeleteEvent:
     async def test_delete_event_works(self, test_event: Event, event_repo: BaseEventRepository) -> None:
         event = await event_repo.get_by_id(event_id=test_event.id)

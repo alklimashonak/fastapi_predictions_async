@@ -14,6 +14,9 @@ class BaseEventRepository:
     async def create(self, event: EventCreate) -> Event:
         raise NotImplementedError
 
+    async def run(self, event_id: int) -> Event:
+        raise NotImplementedError
+
     async def delete(self, event_id: int) -> None:
         raise NotImplementedError
 
@@ -38,6 +41,9 @@ class BaseEventService:
         raise NotImplementedError
 
     async def create(self, event: EventCreate) -> Event:
+        raise NotImplementedError
+
+    async def run(self, event_id: int) -> Event:
         raise NotImplementedError
 
     async def delete(self, event_id: int) -> None:

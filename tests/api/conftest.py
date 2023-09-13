@@ -89,6 +89,17 @@ def event1(match1: MatchModel) -> EventModel:
 
 
 @pytest.fixture(scope='session')
+def active_event(match1: MatchModel) -> EventModel:
+    return EventModel(
+        id=124,
+        name='event1',
+        status=Status.in_process,
+        deadline=datetime.utcnow(),
+        matches=[match1],
+    )
+
+
+@pytest.fixture(scope='session')
 def active_user() -> UserModel:
     return UserModel(
         email="testuser@example.com",
@@ -179,10 +190,10 @@ def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
 
 
 @pytest.fixture(scope='session')
-def fake_get_event_service(event1: EventModel):
+def fake_get_event_service(event1: EventModel, active_event: EventModel):
     def _fake_get_event_service() -> BaseEventService:
         class MockEventService(BaseEventService):
-            events = [event1]
+            events = [event1, active_event]
 
             async def get_multiple(
                     self,
@@ -190,18 +201,38 @@ def fake_get_event_service(event1: EventModel):
                     offset: int = 0,
                     limit: int = 100
             ) -> list[EventModel]:
-                return [event1]
+                return [event1, active_event]
 
             async def get_by_id(self, event_id: int) -> EventModel | None:
                 if event_id == event1.id:
                     return event1
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
+                elif event_id == active_event.id:
+                    return active_event
+                else:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
 
             async def create(self, event: EventCreate) -> EventModel:
                 new_event = EventModel(**event.dict())
                 matches = [MatchModel(**match.dict(), event_id=new_event.id) for match in event.matches]
                 new_event.matches = matches
                 return new_event
+
+            async def run(self, event_id: int) -> EventModel:
+                event = await self.get_by_id(event_id=event_id)
+
+                if event.status == Status.not_started:
+                    return EventModel(
+                        id=event.id,
+                        name=event.name,
+                        status=Status.in_process,
+                        deadline=event.deadline,
+                        matches=event.matches,
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail='You can run only not started events'
+                    )
 
             async def delete(self, event_id: int) -> None:
                 await self.get_by_id(event_id=event_id)

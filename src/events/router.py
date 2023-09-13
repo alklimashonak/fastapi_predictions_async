@@ -40,6 +40,19 @@ async def create_event(
     return await event_service.create(event=event)
 
 
+@router.patch(
+    '/{event_id}/run',
+    response_model=EventRead,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(get_current_superuser)],
+)
+async def run_event(
+        event_id: int,
+        event_service: BaseEventService = Depends(get_event_service),
+):
+    return await event_service.run(event_id=event_id)
+
+
 @router.delete('/{event_id}', dependencies=[Depends(get_current_superuser)])
 async def delete_event(
         event_id: int,
