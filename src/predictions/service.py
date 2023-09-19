@@ -44,7 +44,10 @@ class PredictionService(BasePredictionService):
         return await self.repo.create(prediction=prediction, user_id=user_id)
 
     async def update(self, prediction_id: int, prediction: PredictionUpdate, user_id: UUID) -> Prediction:
-        predict = await self.get_by_id(prediction_id=prediction_id)
+        predict = await self.repo.get_by_id(prediction_id=prediction_id)
+
+        if not predict:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Prediction not found')
 
         if predict.user_id != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can only edit your own predictions')

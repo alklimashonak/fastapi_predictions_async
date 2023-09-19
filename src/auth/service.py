@@ -31,7 +31,7 @@ class AuthService(BaseAuthService):
         return await self.repo.get_by_email(email=email)
 
     async def register(self, new_user: UserCreate) -> User:
-        user = await self.get_by_email(email=new_user.email)
+        user = await self.repo.get_by_email(email=new_user.email)
 
         if user:
             raise HTTPException(
@@ -41,7 +41,7 @@ class AuthService(BaseAuthService):
         return await self.repo.create(new_user=new_user)
 
     async def login(self, email: str, password: str) -> User | None:
-        user = await self.get_by_email(email=email)
+        user = await self.repo.get_by_email(email=email)
 
         if not user or not verify_password(password, user.hashed_password):
             raise HTTPException(status_code=400, detail="Incorrect email or password")

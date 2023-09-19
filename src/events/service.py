@@ -26,14 +26,23 @@ class EventService(BaseEventService):
         return await self.repo.create(event=event)
 
     async def run(self, event_id: int) -> Event:
-        event = await self.get_by_id(event_id=event_id)
+        event = await self.repo.get_by_id(event_id=event_id)
+
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
 
         if event.status != 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='You can run only not started events')
+        if len(event.matches) != 5:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
+
         return await self.repo.run(event_id=event_id)
 
     async def delete(self, event_id: int) -> None:
-        await self.get_by_id(event_id=event_id)
+        event = await self.repo.get_by_id(event_id=event_id)
+
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
 
         return await self.repo.delete(event_id=event_id)
 
@@ -48,6 +57,9 @@ class EventService(BaseEventService):
         return await self.repo.create_match(match=match, event_id=event_id)
 
     async def delete_match_by_id(self, match_id: int) -> None:
-        await self.get_match_by_id(match_id=match_id)
+        event = await self.repo._get_match_by_id(match_id=match_id)
+
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
 
         return await self.repo.delete_match_by_id(match_id=match_id)

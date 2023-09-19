@@ -4,7 +4,6 @@ from pydantic import EmailStr
 from src.auth.models import User
 from src.auth.base import BaseAuthRepository
 from src.auth.schemas import UserCreate
-from src.core.config import settings
 
 
 @pytest.mark.asyncio

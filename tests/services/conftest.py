@@ -129,19 +129,19 @@ def prediction2(superuser: UserModel, match1: MatchModel) -> PredictionModel:
 @pytest.fixture(scope='session')
 def mock_auth_repo(active_user: UserModel, superuser: UserModel):
     class MockAuthRepository(BaseAuthRepository):
-        users = [active_user, superuser]
+        users = {
+            active_user.id: active_user,
+            superuser.id: superuser,
+        }
 
         async def get_multiple(self) -> Sequence[UserModel]:
-            return self.users
+            return list(self.users.values())
 
         async def get_by_id(self, user_id: UUID) -> UserModel | None:
-            for user in self.users:
-                if user.id == user_id:
-                    return user
-            return None
+            return self.users.get(user_id)
 
         async def get_by_email(self, email: str) -> UserModel | None:
-            for user in self.users:
+            for user in self.users.values():
                 if user.email == email:
                     return user
             return None

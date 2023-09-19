@@ -2,13 +2,13 @@ from datetime import datetime, timezone
 
 import pytest
 from fastapi import HTTPException
-from pydantic.error_wrappers import ValidationError
 
 from src.events.base import BaseEventRepository, BaseEventService
 from src.events.models import Status
 from src.events.schemas import EventCreate, MatchCreate
 from src.events.service import EventService
 from tests.services.conftest import EventModel
+from tests.utils import gen_matches
 
 
 @pytest.fixture
@@ -112,16 +112,30 @@ class TestUpdate:
 
         event1.status = Status.not_started
 
-    async def test_run_not_started_event_returns_updated_event(
+    async def test_run_without_5_matches_raises_err(
             self,
             event_service: BaseEventService,
             event1: EventModel,
     ) -> None:
         assert event1.status == Status.not_started
 
+        with pytest.raises(HTTPException):
+            await event_service.run(event_id=event1.id)
+
+    async def test_run_correctly_event_returns_event(
+            self,
+            event_service: BaseEventService,
+            event1: EventModel,
+    ) -> None:
+        default_matches = event1.matches
+        event1.matches = gen_matches(event_id=event1.id, count=5)
+
         updated_event = await event_service.run(event_id=event1.id)
 
         assert updated_event.status == Status.in_process
+
+        event1.status = Status.not_started
+        event1.matches = default_matches
 
 
 @pytest.mark.asyncio
