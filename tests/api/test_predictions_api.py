@@ -41,8 +41,8 @@ async def async_client(
 
 @pytest.mark.asyncio
 class TestGetPredictions:
-    async def test_missing_token(self, async_client: AsyncClient) -> None:
-        response = await async_client.get('/predictions/123')
+    async def test_missing_token(self, async_client: AsyncClient, prediction1: PredictionModel) -> None:
+        response = await async_client.get(f'/predictions/{prediction1.id}')
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.json()['detail'] == 'Not authenticated'
@@ -52,14 +52,15 @@ class TestGetPredictions:
             async_client: AsyncClient,
             active_user: UserModel,
             superuser: UserModel,
+            prediction1: PredictionModel,
     ) -> None:
         user_response = await async_client.get(
-            '/predictions/123',
+            f'/predictions/{prediction1.id}',
             headers={'Authorization': active_user.email}
         )
 
         superuser_response = await async_client.get(
-            '/predictions/123',
+            f'/predictions/{prediction1.id}',
             headers={'Authorization': superuser.email}
         )
 
@@ -142,7 +143,7 @@ class TestUpdatePrediction:
         }
 
         response = await async_client.put(
-            f'/predictions/21321421412',
+            '/predictions/21321421412',
             json=json,
             headers={'Authorization': active_user.email}
         )
