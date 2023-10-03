@@ -4,8 +4,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from src.events.base import BaseEventService, BaseEventRepository
-from src.events.models import Event, Match
-from src.events.schemas import EventCreate, MatchCreate
+from src.events.models import Event
+from src.events.schemas import EventCreate
 
 
 class EventService(BaseEventService):
@@ -33,6 +33,7 @@ class EventService(BaseEventService):
 
         if event.status != 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='You can run only not started events')
+
         if len(event.matches) != 5:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
 
@@ -45,21 +46,3 @@ class EventService(BaseEventService):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
 
         return await self.repo.delete(event_id=event_id)
-
-    async def get_match_by_id(self, match_id: int) -> Match:
-        match = await self.repo._get_match_by_id(match_id=match_id)
-
-        if not match:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
-        return match
-
-    async def create_match(self, match: MatchCreate, event_id: int) -> Match:
-        return await self.repo.create_match(match=match, event_id=event_id)
-
-    async def delete_match_by_id(self, match_id: int) -> None:
-        event = await self.repo._get_match_by_id(match_id=match_id)
-
-        if not event:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-
-        return await self.repo.delete_match_by_id(match_id=match_id)

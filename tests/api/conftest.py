@@ -16,7 +16,9 @@ from src.auth.schemas import UserCreate
 from src.core.security import get_password_hash, verify_password
 from src.events.base import BaseEventService
 from src.events.models import Status
-from src.events.schemas import EventCreate, MatchCreate
+from src.events.schemas import EventCreate
+from src.matches.base import BaseMatchService
+from src.matches.schemas import MatchCreate
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 from tests.utils import gen_matches
@@ -219,10 +221,7 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
                 return event
 
             async def create(self, event: EventCreate) -> EventModel:
-                new_event = EventModel(**event.dict())
-                matches = [MatchModel(**match.dict(), event_id=new_event.id) for match in event.matches]
-                new_event.matches = matches
-                return new_event
+                return EventModel(**event.dict())
 
             async def run(self, event_id: int) -> EventModel:
                 event = await self.get_by_id(event_id=event_id)
@@ -248,21 +247,31 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
             async def delete(self, event_id: int) -> None:
                 await self.get_by_id(event_id=event_id)
 
-            async def get_match_by_id(self, match_id: int) -> MatchModel:
-                match = self.matches.get(match_id)
-                if not match:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='match not found')
-                return match
-
-            async def create_match(self, match: MatchCreate, event_id: int) -> MatchModel:
-                return MatchModel(**match.dict(), event_id=event_id)
-
-            async def delete_match_by_id(self, match_id: int) -> None:
-                await self.get_match_by_id(match_id=match_id)
-
         yield MockEventService()
 
     return _fake_get_event_service
+
+
+@pytest.fixture(scope='session')
+def fake_get_match_service(match1: MatchModel):
+    def _fake_get_match_service() -> BaseMatchService:
+        class MockMatchService(BaseMatchService):
+            matches = {
+                match1.id: match1,
+            }
+
+            async def create(self, match: MatchCreate, event_id: int) -> MatchModel:
+                return MatchModel(**match.dict(), event_id=event_id)
+
+            async def delete(self, match_id: int) -> None:
+                match = self.matches.get(match_id)
+
+                if not match:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
+
+        yield MockMatchService()
+
+    return _fake_get_match_service
 
 
 @pytest.fixture(scope='session')

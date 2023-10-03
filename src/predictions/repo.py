@@ -36,17 +36,17 @@ class PredictionRepository(BasePredictionRepository):
 
         self.session.add(new_prediction)
 
-        await self.session.flush([new_prediction])
         await self.session.commit()
+        await self.session.refresh(new_prediction)
 
         return new_prediction
 
     async def update(self, prediction_id: int, prediction: PredictionUpdate) -> Prediction | None:
-        stmt = update(Prediction).values(**prediction.dict()).where(Prediction.id == prediction_id)
-
-        await self.session.execute(stmt)
+        stmt = update(Prediction).values(**prediction.dict()).where(Prediction.id == prediction_id).returning(Prediction)
+        result = await self.session.execute(stmt)
         await self.session.commit()
-        return await self.get_by_id(prediction_id=prediction_id)
+
+        return result.scalar_one_or_none()
 
     async def exists_in_db(self, user_id: UUID, match_id: int) -> bool:
         stmt = select(Prediction).where(Prediction.user_id == user_id, Prediction.match_id == match_id)

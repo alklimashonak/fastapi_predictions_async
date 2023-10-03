@@ -1,24 +1,36 @@
 import logging
+from typing import Callable
 
 import pytest
 from fastapi import HTTPException
 
 from src.core.security import get_password_hash
-from src.events.base import BaseEventRepository
-from src.predictions.base import BasePredictionRepository, BasePredictionService
+from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 from src.predictions.service import PredictionService
-from tests.services.conftest import PredictionModel, EventModel, UserModel, MatchModel
+from tests.services.utils import UserModel, EventModel, MatchModel, PredictionModel
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
 def prediction_service(
-        mock_prediction_repo: BasePredictionRepository,
-        mock_event_repo: BaseEventRepository,
+        mock_prediction_repo: Callable,
+        mock_match_repo: Callable,
+        superuser: UserModel,
+        active_user: UserModel,
+        event1: EventModel,
+        match1: MatchModel,
+        prediction1: PredictionModel,
+        prediction2: PredictionModel,
 ) -> BasePredictionService:
-    yield PredictionService(mock_prediction_repo, mock_event_repo)
+    prediction_repo = mock_prediction_repo(
+        users=[superuser, active_user],
+        events=[event1],
+        predictions=[prediction1, prediction2]
+    )
+    match_repo = mock_match_repo(matches=[match1])
+    yield PredictionService(prediction_repo, match_repo)
 
 
 @pytest.mark.asyncio

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def app_factory():
     def _app_factory() -> FastAPI:
         app = FastAPI()
-        app.include_router(prediction_router, prefix='', tags=['Predictions'])
+        app.include_router(prediction_router, prefix='/predictions', tags=['Predictions'])
 
         return app
 

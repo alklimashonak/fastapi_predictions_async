@@ -1,18 +1,20 @@
+from typing import Callable
 from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
 from pydantic import EmailStr
 
-from src.auth.base import BaseAuthService, BaseAuthRepository
+from src.auth.base import BaseAuthService
 from src.auth.schemas import UserCreate
 from src.auth.service import AuthService
-from tests.services.conftest import UserModel, user_password
+from tests.services.utils import user_password, UserModel
 
 
 @pytest.fixture
-def auth_service(mock_auth_repo: BaseAuthRepository) -> BaseAuthService:
-    yield AuthService(mock_auth_repo)
+def auth_service(mock_auth_repo: Callable, active_user: UserModel, superuser: UserModel) -> BaseAuthService:
+    repo = mock_auth_repo(users=[active_user, superuser])
+    yield AuthService(repo)
 
 
 @pytest.mark.asyncio

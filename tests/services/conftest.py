@@ -1,9 +1,7 @@
-import dataclasses
 import logging
 from datetime import datetime
-from itertools import count
 from typing import Sequence
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
@@ -12,58 +10,37 @@ from src.auth.schemas import UserCreate
 from src.core.security import get_password_hash
 from src.events.base import BaseEventRepository
 from src.events.models import Status
-from src.events.schemas import EventCreate, MatchCreate
+from src.events.schemas import EventCreate
+from src.matches.base import BaseMatchRepository
+from src.matches.schemas import MatchCreate
 from src.predictions.base import BasePredictionRepository
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
+from tests.services.utils import MatchModel, EventModel, UserModel, PredictionModel, user_password, superuser_password
 
 logger = logging.getLogger(__name__)
 
-user_password = 'user'
-superuser_password = 'admin'
-user_password_hash = get_password_hash(user_password)
-superuser_password_hash = get_password_hash(superuser_password)
 
-
-@dataclasses.dataclass
-class UserModel:
-    email: str
-    hashed_password: str
-    id: UUID = dataclasses.field(default_factory=uuid4)
-    is_active: bool = True
-    is_superuser: bool = False
-
-
-@dataclasses.dataclass
-class MatchModel:
-    home_team: str
-    away_team: str
-    event_id: int
-    start_time: datetime
-    status: Status = Status.not_started
-    home_goals: int | None = None
-    away_goals: int | None = None
-    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
-
-
-@dataclasses.dataclass
-class EventModel:
-    name: str
-    deadline: datetime
-    matches: list[MatchModel] = dataclasses.field(default_factory=lambda: [])
-    status: Status = Status.not_started
-    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
-
-
-@dataclasses.dataclass
-class PredictionModel:
-    home_goals: int
-    away_goals: int
-    match_id: int
-    user_id: UUID
-    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
+@pytest.fixture(scope='session')
+def active_user() -> UserModel:
+    return UserModel(
+        email="testuser@example.com",
+        hashed_password=get_password_hash(user_password),
+        is_active=True,
+        is_superuser=False,
+    )
 
 
 @pytest.fixture(scope='session')
+def superuser() -> UserModel:
+    return UserModel(
+        email="testsuperuser@example.com",
+        hashed_password=get_password_hash(superuser_password),
+        is_active=True,
+        is_superuser=True,
+    )
+
+
+@pytest.fixture
 def match1() -> MatchModel:
     return MatchModel(
         id=123,
@@ -75,7 +52,7 @@ def match1() -> MatchModel:
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def event1(match1: MatchModel) -> EventModel:
     return EventModel(
         id=123,
@@ -86,27 +63,7 @@ def event1(match1: MatchModel) -> EventModel:
     )
 
 
-@pytest.fixture(scope='session')
-def active_user() -> UserModel:
-    return UserModel(
-        email="testuser@example.com",
-        hashed_password=user_password_hash,
-        is_active=True,
-        is_superuser=False,
-    )
-
-
-@pytest.fixture(scope='session')
-def superuser() -> UserModel:
-    return UserModel(
-        email="testsuperuser@example.com",
-        hashed_password=superuser_password_hash,
-        is_active=True,
-        is_superuser=True,
-    )
-
-
-@pytest.fixture(scope='session')
+@pytest.fixture
 def prediction1(active_user: UserModel, match1: MatchModel) -> PredictionModel:
     return PredictionModel(
         home_goals=1,
@@ -116,7 +73,7 @@ def prediction1(active_user: UserModel, match1: MatchModel) -> PredictionModel:
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def prediction2(superuser: UserModel, match1: MatchModel) -> PredictionModel:
     return PredictionModel(
         home_goals=1,
@@ -127,24 +84,23 @@ def prediction2(superuser: UserModel, match1: MatchModel) -> PredictionModel:
 
 
 @pytest.fixture(scope='session')
-def mock_auth_repo(active_user: UserModel, superuser: UserModel):
+def mock_auth_repo():
     class MockAuthRepository(BaseAuthRepository):
-        users = {
-            active_user.id: active_user,
-            superuser.id: superuser,
-        }
+        def __init__(self, users: list[UserModel]):
+            self.users = users
 
         async def get_multiple(self) -> Sequence[UserModel]:
-            return list(self.users.values())
+            return self.users
 
         async def get_by_id(self, user_id: UUID) -> UserModel | None:
-            return self.users.get(user_id)
+            for user in self.users:
+                if user.id == user_id:
+                    return user
 
         async def get_by_email(self, email: str) -> UserModel | None:
-            for user in self.users.values():
+            for user in self.users:
                 if user.email == email:
                     return user
-            return None
 
         async def create(self, new_user: UserCreate) -> UserModel:
             hashed_password = get_password_hash(new_user.password)
@@ -156,14 +112,14 @@ def mock_auth_repo(active_user: UserModel, superuser: UserModel):
             )
             return user
 
-    yield MockAuthRepository()
+    yield MockAuthRepository
 
 
 @pytest.fixture(scope='session')
-def mock_event_repo(event1: EventModel, match1: MatchModel):
+def mock_event_repo():
     class MockEventRepository(BaseEventRepository):
-        events = [event1]
-        matches = [match1]
+        def __init__(self, events: list[EventModel]):
+            self.events = events
 
         async def get_multiple(
                 self,
@@ -175,57 +131,69 @@ def mock_event_repo(event1: EventModel, match1: MatchModel):
             return self.events
 
         async def get_by_id(self, event_id: int) -> EventModel | None:
-            if event_id == event1.id:
-                return event1
-            return
+            for event in self.events:
+                if event.id == event_id:
+                    return event
 
         async def create(self, event: EventCreate) -> EventModel:
-            new_event = EventModel(**event.dict())
-            matches = [MatchModel(**match.dict(), event_id=new_event.id) for match in event.matches]
-            new_event.matches = matches
-            return new_event
+            return EventModel(**event.dict())
 
         async def run(self, event_id: int) -> EventModel | None:
-            if event_id == event1.id:
-                event1.status = Status.in_process
-                return event1
-            return
+            for event in self.events:
+                if event.id == event_id:
+                    event.status = Status.in_process
+                    return event
 
         async def delete(self, event_id: int) -> None:
             return
 
-        async def create_match(self, match: MatchCreate, event_id: int) -> MatchModel:
-            return MatchModel(**match.dict(), event_id=event_id)
-
-        async def _get_match_by_id(self, match_id: int) -> MatchModel | None:
-            if match_id == match1.id:
-                return match1
-            return
-
-        async def _create_matches(self, matches: list[MatchCreate], event_id: int) -> None:
-            pass
-
-        async def delete_match_by_id(self, match_id: int) -> None:
-            return
-
-    yield MockEventRepository()
+    yield MockEventRepository
 
 
 @pytest.fixture(scope='session')
-def mock_prediction_repo(prediction1: PredictionModel, prediction2: PredictionModel, event1: EventModel):
+def mock_match_repo():
+    class MockMatchRepository(BaseMatchRepository):
+        def __init__(self, matches):
+            self.matches = matches
+
+        async def create(self, match: MatchCreate, event_id: int) -> MatchModel:
+            return MatchModel(**match.dict(), event_id=event_id)
+
+        async def get_by_id(self, match_id: int) -> MatchModel | None:
+            for match in self.matches:
+                if match.id == match_id:
+                    return match
+
+        async def delete(self, match_id: int) -> None:
+            return
+
+    yield MockMatchRepository
+
+
+@pytest.fixture(scope='session')
+def mock_prediction_repo():
     class MockPredictionRepository(BasePredictionRepository):
-        predictions = [prediction1, prediction2]
+        def __init__(self, users: list[UserModel], events: list[EventModel], predictions: list[PredictionModel]):
+            self.users = users
+            self.events = events
+            self.predictions = predictions
 
         async def get_multiple_by_event_id(self, event_id: int, user_id: UUID) -> list[PredictionModel]:
-            event_matches = [match.id for match in event1.matches]
+            if user_id not in [user.id for user in self.users]:
+                return []
+            try:
+                event = [event for event in self.events if event.id == event_id][0]
+            except IndexError:
+                return []
+
+            event_matches_ids = [match.id for match in event.matches]
             return [prediction for prediction in self.predictions if
-                    prediction.user_id == user_id and prediction.match_id in event_matches]
+                    prediction.user_id == user_id and prediction.match_id in event_matches_ids]
 
         async def get_by_id(self, prediction_id: int) -> PredictionModel | None:
             for prediction in self.predictions:
                 if prediction.id == prediction_id:
                     return prediction
-            return
 
         async def create(self, prediction: PredictionCreate, user_id: UUID) -> PredictionModel:
             return PredictionModel(**prediction.dict(), user_id=user_id)
@@ -250,4 +218,4 @@ def mock_prediction_repo(prediction1: PredictionModel, prediction2: PredictionMo
                     return True
             return False
 
-    yield MockPredictionRepository()
+    yield MockPredictionRepository
