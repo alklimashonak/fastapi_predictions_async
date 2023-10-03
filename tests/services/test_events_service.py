@@ -37,7 +37,7 @@ class TestGetByID:
         assert event.id == event1.id
         assert event.name == event1.name
         assert event.status == event1.status
-        assert event.matches == event1.matches
+        assert len(event.matches) == len(event1.matches)
 
     async def test_get_not_existent_event_raises_http_exc(
             self,

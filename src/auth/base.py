@@ -2,7 +2,7 @@ from typing import Sequence
 from uuid import UUID
 
 from src.auth.models import User
-from src.auth.schemas import UserCreate
+from src.auth.schemas import UserCreate, UserRead
 
 
 class BaseAuthRepository:
@@ -20,17 +20,17 @@ class BaseAuthRepository:
 
 
 class BaseAuthService:
-    async def get_multiple(self) -> Sequence[User]:
+    async def get_multiple(self) -> Sequence[UserRead]:
         raise NotImplementedError
 
-    async def get_by_id(self, user_id: UUID) -> User | None:
+    async def get_by_id(self, user_id: UUID) -> UserRead:
         raise NotImplementedError
 
-    async def get_by_email(self, email: str) -> User | None:
+    async def get_by_email(self, email: str) -> UserRead:
         raise NotImplementedError
 
-    async def register(self, new_user: UserCreate) -> User:
+    async def register(self, new_user: UserCreate) -> UserRead:
         raise NotImplementedError
 
-    async def login(self, email: str, password: str) -> User | None:
+    async def login(self, email: str, password: str) -> UserRead:
         raise NotImplementedError

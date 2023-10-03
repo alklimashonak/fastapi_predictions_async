@@ -1,5 +1,6 @@
 from src.events.models import Match
 from src.events.schemas import MatchCreate
+from src.matches.schemas import MatchRead
 
 
 class BaseMatchRepository:
@@ -14,7 +15,7 @@ class BaseMatchRepository:
 
 
 class BaseMatchService:
-    async def create(self, match: MatchCreate, event_id: int) -> Match:
+    async def create(self, match: MatchCreate, event_id: int) -> MatchRead:
         raise NotImplementedError
 
     async def delete(self, match_id: int) -> None:

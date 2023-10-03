@@ -82,7 +82,6 @@ class TestRegister:
         user = await auth_service.register(new_user=user)
 
         assert user.id
-        assert user.hashed_password
         assert user.email == user_email
         assert user.is_active is True
         assert user.is_superuser is False
