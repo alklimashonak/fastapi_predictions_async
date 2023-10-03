@@ -15,7 +15,7 @@ from src.matches.base import BaseMatchRepository
 from src.matches.schemas import MatchCreate
 from src.predictions.base import BasePredictionRepository
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
-from tests.services.utils import MatchModel, EventModel, UserModel, PredictionModel, user_password, superuser_password
+from tests.utils import MatchModel, EventModel, UserModel, PredictionModel, user_password, superuser_password
 
 logger = logging.getLogger(__name__)
 
