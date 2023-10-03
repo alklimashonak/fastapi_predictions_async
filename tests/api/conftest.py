@@ -1,8 +1,6 @@
-import dataclasses
 from datetime import datetime
-from itertools import count
 from typing import AsyncGenerator
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import httpx
 import pytest
@@ -21,51 +19,12 @@ from src.matches.base import BaseMatchService
 from src.matches.schemas import MatchCreate
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
-from tests.utils import gen_matches
+from tests.utils import gen_matches, MatchModel, EventModel, UserModel, PredictionModel
 
 user_password = 'user'
 superuser_password = 'admin'
 user_password_hash = get_password_hash(user_password)
 superuser_password_hash = get_password_hash(superuser_password)
-
-
-@dataclasses.dataclass
-class UserModel:
-    email: str
-    hashed_password: str
-    id: UUID = dataclasses.field(default_factory=uuid4)
-    is_active: bool = True
-    is_superuser: bool = False
-
-
-@dataclasses.dataclass
-class MatchModel:
-    home_team: str
-    away_team: str
-    event_id: int
-    start_time: datetime
-    status: Status = Status.not_started
-    home_goals: int | None = None
-    away_goals: int | None = None
-    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
-
-
-@dataclasses.dataclass
-class EventModel:
-    name: str
-    deadline: datetime
-    matches: list[MatchModel] = dataclasses.field(default_factory=lambda: [])
-    status: Status = Status.not_started
-    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
-
-
-@dataclasses.dataclass
-class PredictionModel:
-    home_goals: int
-    away_goals: int
-    match_id: int
-    user_id: UUID
-    id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
 
 
 @pytest.fixture(scope='session')

@@ -8,7 +8,7 @@ from pydantic import EmailStr
 from src.auth.base import BaseAuthService
 from src.auth.schemas import UserCreate
 from src.auth.service import AuthService
-from tests.services.utils import user_password, UserModel
+from tests.utils import user_password, UserModel
 
 
 @pytest.fixture

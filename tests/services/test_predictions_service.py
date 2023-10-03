@@ -8,7 +8,7 @@ from src.core.security import get_password_hash
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 from src.predictions.service import PredictionService
-from tests.services.utils import UserModel, EventModel, MatchModel, PredictionModel
+from tests.utils import UserModel, EventModel, MatchModel, PredictionModel
 
 logger = logging.getLogger(__name__)
 

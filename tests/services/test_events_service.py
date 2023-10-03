@@ -8,8 +8,7 @@ from src.events.base import BaseEventService
 from src.events.models import Status
 from src.events.schemas import EventCreate
 from src.events.service import EventService
-from tests.services.utils import EventModel
-from tests.utils import gen_matches
+from tests.utils import EventModel, gen_matches
 
 
 @pytest.fixture
