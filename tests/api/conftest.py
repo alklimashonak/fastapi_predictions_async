@@ -19,12 +19,8 @@ from src.matches.base import BaseMatchService
 from src.matches.schemas import MatchCreate
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
-from tests.utils import gen_matches, MatchModel, EventModel, UserModel, PredictionModel
-
-user_password = 'user'
-superuser_password = 'admin'
-user_password_hash = get_password_hash(user_password)
-superuser_password_hash = get_password_hash(superuser_password)
+from tests.utils import gen_matches, MatchModel, EventModel, UserModel, PredictionModel, user_password, \
+    superuser_password
 
 
 @pytest.fixture(scope='session')
@@ -65,7 +61,7 @@ def active_event(match1: MatchModel) -> EventModel:
 def active_user() -> UserModel:
     return UserModel(
         email="testuser@example.com",
-        hashed_password=user_password_hash,
+        hashed_password=get_password_hash(user_password),
         is_active=True,
         is_superuser=False,
     )
@@ -75,7 +71,7 @@ def active_user() -> UserModel:
 def superuser() -> UserModel:
     return UserModel(
         email="testsuperuser@example.com",
-        hashed_password=superuser_password_hash,
+        hashed_password=get_password_hash(superuser_password),
         is_active=True,
         is_superuser=True,
     )
@@ -105,25 +101,22 @@ def prediction2(superuser: UserModel, match1: MatchModel) -> PredictionModel:
 def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
     def _fake_get_auth_service() -> BaseAuthService:
         class MockAuthService(BaseAuthService):
-            users = {
-                active_user.id: active_user,
-                superuser.id: superuser,
-            }
+            def __init__(self, users: list[UserModel]):
+                self.users = users
 
             async def get_multiple(self) -> list[UserModel]:
-                return list(self.users.values())
+                return self.users
 
             async def get_by_id(self, user_id: UUID) -> UserModel | None:
-                user = self.users.get(user_id)
-                if not user:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='user not found')
-                return user
+                for user in self.users:
+                    if user.id == user_id:
+                        return user
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='user not found')
 
             async def get_by_email(self, email: str) -> UserModel | None:
-                for user in self.users.values():
+                for user in self.users:
                     if user.email == email:
                         return user
-                return None
 
             async def register(self, new_user: UserCreate) -> UserModel:
                 user = await self.get_by_email(email=new_user.email)
@@ -144,12 +137,12 @@ def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
                 return user
 
             async def login(self, email: str, password: str) -> UserModel | None:
-                for user in self.users.values():
+                for user in self.users:
                     if user.email == email and verify_password(password, user.hashed_password):
                         return user
                 raise HTTPException(status_code=400, detail="Incorrect email or password")
 
-        yield MockAuthService()
+        yield MockAuthService(users=[active_user, superuser])
 
     return _fake_get_auth_service
 
@@ -158,12 +151,8 @@ def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
 def fake_get_event_service(event1: EventModel, active_event: EventModel):
     def _fake_get_event_service() -> BaseEventService:
         class MockEventService(BaseEventService):
-            events = {
-                event1.id: event1,
-                active_event.id: active_event,
-            }
-
-            matches = {match.id: match for event in events.values() for match in event.matches}
+            def __init__(self, events: list[EventModel]):
+                self.events = events
 
             async def get_multiple(
                     self,
@@ -171,13 +160,13 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
                     offset: int = 0,
                     limit: int = 100
             ) -> list[EventModel]:
-                return list(self.events.values())
+                return self.events
 
             async def get_by_id(self, event_id: int) -> EventModel | None:
-                event = self.events.get(event_id)
-                if not event:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
-                return event
+                for event in self.events:
+                    if event.id == event_id:
+                        return event
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='event not found')
 
             async def create(self, event: EventCreate) -> EventModel:
                 return EventModel(**event.dict())
@@ -206,7 +195,7 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
             async def delete(self, event_id: int) -> None:
                 await self.get_by_id(event_id=event_id)
 
-        yield MockEventService()
+        yield MockEventService(events=[event1, active_event])
 
     return _fake_get_event_service
 
@@ -215,20 +204,17 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
 def fake_get_match_service(match1: MatchModel):
     def _fake_get_match_service() -> BaseMatchService:
         class MockMatchService(BaseMatchService):
-            matches = {
-                match1.id: match1,
-            }
+            def __init__(self, matches: list[MatchModel]):
+                self.matches = matches
 
             async def create(self, match: MatchCreate, event_id: int) -> MatchModel:
                 return MatchModel(**match.dict(), event_id=event_id)
 
             async def delete(self, match_id: int) -> None:
-                match = self.matches.get(match_id)
-
-                if not match:
+                if not [match for match in self.matches if match.id == match_id]:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
 
-        yield MockMatchService()
+        yield MockMatchService(matches=[match1])
 
     return _fake_get_match_service
 
@@ -237,25 +223,22 @@ def fake_get_match_service(match1: MatchModel):
 def fake_get_prediction_service(prediction1: PredictionModel, prediction2: PredictionModel, event1: EventModel):
     def _fake_get_prediction_service() -> BasePredictionService:
         class MockPredictionService(BasePredictionService):
-            predictions = {
-                prediction1.id: prediction1,
-                prediction2.id: prediction2,
-            }
+            def __init__(self, predictions: list[PredictionModel]):
+                self.predictions = predictions
 
             async def get_multiple_by_event_id(self, event_id: int, user_id: UUID) -> list[PredictionModel]:
                 event_matches = [match.id for match in event1.matches]
-                return [prediction for prediction in self.predictions.values() if
+                return [prediction for prediction in self.predictions if
                         prediction.user_id == user_id and prediction.match_id in event_matches]
 
-            async def get_by_id(self, prediction_id: int) -> PredictionModel | None:
-                prediction = self.predictions.get(prediction_id)
-
-                if not prediction:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Prediction not found')
-                return prediction
+            async def get_by_id(self, prediction_id: int) -> PredictionModel:
+                for prediction in self.predictions:
+                    if prediction.id == prediction_id:
+                        return prediction
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Prediction not found')
 
             async def create(self, prediction: PredictionCreate, user_id: UUID) -> PredictionModel:
-                for predict in self.predictions.values():
+                for predict in self.predictions:
                     if predict.match_id == prediction.match_id and predict.user_id == user_id:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
@@ -276,7 +259,7 @@ def fake_get_prediction_service(prediction1: PredictionModel, prediction2: Predi
                     user_id=prediction_to_update.user_id,
                 )
 
-        yield MockPredictionService()
+        yield MockPredictionService(predictions=[prediction1, prediction2])
 
     return _fake_get_prediction_service
 

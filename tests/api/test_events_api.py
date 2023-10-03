@@ -12,6 +12,7 @@ from src.auth.dependencies import get_current_user
 from src.events.router import router as event_router
 from src.events.dependencies import get_event_service
 from tests.api.conftest import UserModel
+from tests.utils import EventModel
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +50,8 @@ class TestGetEvents:
 
 @pytest.mark.asyncio
 class TestGetEventByID:
-    async def test_get_event_works(self, async_client: AsyncClient) -> None:
-        response = await async_client.get('/events/123')
+    async def test_get_event_works(self, async_client: AsyncClient, event1: EventModel) -> None:
+        response = await async_client.get(f'/events/{event1.id}')
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -94,19 +95,19 @@ class TestCreateEvent:
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.json()['name'] == 'Event 1'
+        assert response.json()['name'] == self.json.get('name')
 
 
 @pytest.mark.asyncio
 class TestUpdateEvent:
-    async def test_missing_token(self, async_client: AsyncClient) -> None:
-        response = await async_client.patch('/events/123/run')
+    async def test_missing_token(self, async_client: AsyncClient, event1: EventModel) -> None:
+        response = await async_client.patch(f'/events/{event1.id}/run')
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.json()['detail'] == 'Not authenticated'
 
-    async def test_forbidden(self, async_client: AsyncClient, active_user: UserModel) -> None:
-        response = await async_client.patch('/events/123/run', headers={'Authorization': active_user.email})
+    async def test_forbidden(self, async_client: AsyncClient, active_user: UserModel, event1: EventModel) -> None:
+        response = await async_client.patch(f'/events/{event1.id}/run', headers={'Authorization': active_user.email})
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -116,18 +117,20 @@ class TestUpdateEvent:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json()['detail'] == 'event not found'
 
-    async def test_event_already_started(self, async_client: AsyncClient, superuser: UserModel) -> None:
+    async def test_event_already_started(self, async_client: AsyncClient,
+                                         superuser: UserModel, active_event: EventModel) -> None:
         response = await async_client.patch(
-            '/events/124/run',
+            f'/events/{active_event.id}/run',
             headers={'Authorization': superuser.email}
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json()['detail'] == 'You can run only not started events'
 
-    async def test_superuser_has_access(self, async_client: AsyncClient, superuser: UserModel) -> None:
+    async def test_superuser_has_access(self, async_client: AsyncClient,
+                                        superuser: UserModel, event1: EventModel) -> None:
         response = await async_client.patch(
-            '/events/123/run',
+            f'/events/{event1.id}/run',
             headers={'Authorization': superuser.email}
         )
 
@@ -137,14 +140,14 @@ class TestUpdateEvent:
 
 @pytest.mark.asyncio
 class TestDeleteEvent:
-    async def test_missing_token(self, async_client: AsyncClient) -> None:
-        response = await async_client.delete('/events/123')
+    async def test_missing_token(self, async_client: AsyncClient, event1: EventModel) -> None:
+        response = await async_client.delete(f'/events/{event1.id}')
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.json()['detail'] == 'Not authenticated'
 
-    async def test_forbidden(self, async_client: AsyncClient, active_user: UserModel) -> None:
-        response = await async_client.delete('/events/123', headers={'Authorization': active_user.email})
+    async def test_forbidden(self, async_client: AsyncClient, active_user: UserModel, event1: EventModel) -> None:
+        response = await async_client.delete(f'/events/{event1.id}', headers={'Authorization': active_user.email})
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -154,7 +157,8 @@ class TestDeleteEvent:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json()['detail'] == 'event not found'
 
-    async def test_superuser_has_access(self, async_client: AsyncClient, superuser: UserModel) -> None:
-        response = await async_client.delete('/events/123', headers={'Authorization': superuser.email})
+    async def test_superuser_has_access(self, async_client: AsyncClient,
+                                        superuser: UserModel, event1: EventModel) -> None:
+        response = await async_client.delete(f'/events/{event1.id}', headers={'Authorization': superuser.email})
 
         assert response.status_code == status.HTTP_200_OK

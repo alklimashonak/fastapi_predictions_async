@@ -11,6 +11,7 @@ from starlette import status
 from src.auth.router import router as auth_router
 from src.auth.dependencies import get_auth_service
 from tests.api.conftest import UserModel
+from tests.utils import user_password
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class TestLogin:
         }
         data = {
             'username': active_user.email,
-            'password': 'user',
+            'password': user_password,
         }
         response = await async_client.post('/auth/login', data=data, headers=headers)
 
