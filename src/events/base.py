@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from src.events.models import Event
-from src.events.schemas import EventCreate
+from src.events.schemas import EventCreate, EventRead
 
 
 class BaseEventRepository:
@@ -22,16 +22,16 @@ class BaseEventRepository:
 
 
 class BaseEventService:
-    async def get_multiple(self, admin_mode: bool, offset: int = 0, limit: int = 100) -> Sequence[Event]:
+    async def get_multiple(self, admin_mode: bool, offset: int = 0, limit: int = 100) -> Sequence[EventRead]:
         raise NotImplementedError
 
-    async def get_by_id(self, event_id: int) -> Event | None:
+    async def get_by_id(self, event_id: int) -> EventRead:
         raise NotImplementedError
 
-    async def create(self, event: EventCreate) -> Event:
+    async def create(self, event: EventCreate) -> EventRead:
         raise NotImplementedError
 
-    async def run(self, event_id: int) -> Event:
+    async def run(self, event_id: int) -> EventRead:
         raise NotImplementedError
 
     async def delete(self, event_id: int) -> None:
