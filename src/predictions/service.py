@@ -7,8 +7,7 @@ from starlette import status
 
 from src.matches.base import BaseMatchRepository
 from src.predictions.base import BasePredictionService, BasePredictionRepository
-from src.predictions.models import Prediction
-from src.predictions.schemas import PredictionCreate, PredictionUpdate
+from src.predictions.schemas import PredictionCreate, PredictionUpdate, PredictionRead
 
 logger = logging.getLogger(__name__)
 
@@ -18,17 +17,19 @@ class PredictionService(BasePredictionService):
         self.repo = repo
         self.match_repo = match_repo
 
-    async def get_by_id(self, prediction_id: int) -> Prediction | None:
+    async def get_by_id(self, prediction_id: int) -> PredictionRead:
         prediction = await self.repo.get_by_id(prediction_id=prediction_id)
 
         if not prediction:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Prediction not found')
-        return prediction
+        return PredictionRead.from_orm(prediction)
 
-    async def get_multiple_by_event_id(self, event_id: int, user_id: UUID) -> Sequence[Prediction]:
-        return await self.repo.get_multiple_by_event_id(event_id=event_id, user_id=user_id)
+    async def get_multiple_by_event_id(self, event_id: int, user_id: UUID) -> Sequence[PredictionRead]:
+        predictions = await self.repo.get_multiple_by_event_id(event_id=event_id, user_id=user_id)
 
-    async def create(self, prediction: PredictionCreate, user_id: UUID) -> Prediction:
+        return [PredictionRead.from_orm(prediction) for prediction in predictions]
+
+    async def create(self, prediction: PredictionCreate, user_id: UUID) -> PredictionRead:
         if not await self.match_repo.get_by_id(match_id=prediction.match_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -41,9 +42,10 @@ class PredictionService(BasePredictionService):
                 detail='Prediction for this match already exists',
             )
 
-        return await self.repo.create(prediction=prediction, user_id=user_id)
+        prediction = await self.repo.create(prediction=prediction, user_id=user_id)
+        return PredictionRead.from_orm(prediction)
 
-    async def update(self, prediction_id: int, prediction: PredictionUpdate, user_id: UUID) -> Prediction:
+    async def update(self, prediction_id: int, prediction: PredictionUpdate, user_id: UUID) -> PredictionRead:
         predict = await self.repo.get_by_id(prediction_id=prediction_id)
 
         if not predict:
@@ -52,4 +54,6 @@ class PredictionService(BasePredictionService):
         if predict.user_id != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can only edit your own predictions')
 
-        return await self.repo.update(prediction_id=prediction_id, prediction=prediction)
+        predict = await self.repo.update(prediction_id=prediction_id, prediction=prediction)
+
+        return PredictionRead.from_orm(predict)
