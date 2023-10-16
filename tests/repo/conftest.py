@@ -96,6 +96,7 @@ def run_migrations() -> None:
     config = Config(ini_file)
     config.set_main_option("script_location", alembic_directory)
     logger.info('RUN MIGRATIONS')
+    command.downgrade(config, 'base')
     command.upgrade(config, "head")
     yield
     logger.info('DROP MIGRATIONS')
@@ -103,20 +104,8 @@ def run_migrations() -> None:
 
 
 @pytest_asyncio.fixture(scope='session', autouse=True)
-async def prepare_database(run_migrations: None) -> None:
-    logger.info('PREPARE DATABASE')
-    async with async_engine.begin() as conn:
-        await conn.run_sync(metadata.create_all)
-        logger.info('CREATE DB')
-    yield
-    async with async_engine.begin() as conn:
-        await conn.run_sync(metadata.drop_all)
-        logger.info('DROP DB')
-
-
-@pytest_asyncio.fixture(scope='session', autouse=True)
 async def fill_db(
-        prepare_database: None,
+        run_migrations: None, # noqa
         test_user: User,
         test_event: Event,
         test_match: Match,
@@ -139,14 +128,14 @@ async def db_session() -> AsyncSession:
     async with async_engine.connect() as conn:
         await conn.begin()
 
-        AsyncSessionLocal = async_sessionmaker(
+        async_session_local = async_sessionmaker(
             bind=conn,
             autocommit=False,
             autoflush=False,
             future=True,
             expire_on_commit=False)
 
-        session = AsyncSessionLocal()
+        session = async_session_local()
 
         yield session
         await session.close()
@@ -154,20 +143,20 @@ async def db_session() -> AsyncSession:
 
 
 @pytest.fixture
-def auth_repo(db_session: AsyncSession) -> BaseAuthRepository:
+def auth_repo(db_session: AsyncSession) -> BaseAuthRepository: # noqa
     yield AuthRepository(session=db_session)
 
 
 @pytest.fixture
-def event_repo(db_session: AsyncSession) -> BaseEventRepository:
+def event_repo(db_session: AsyncSession) -> BaseEventRepository: # noqa
     yield EventRepository(session=db_session)
 
 
 @pytest.fixture
-def match_repo(db_session: AsyncSession) -> BaseMatchRepository:
+def match_repo(db_session: AsyncSession) -> BaseMatchRepository: # noqa
     yield MatchRepository(session=db_session)
 
 
 @pytest.fixture
-def prediction_repo(db_session: AsyncSession) -> BasePredictionRepository:
+def prediction_repo(db_session: AsyncSession) -> BasePredictionRepository: # noqa
     yield PredictionRepository(session=db_session)

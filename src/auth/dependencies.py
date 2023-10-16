@@ -6,9 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from src.auth.base import BaseAuthService
-from src.auth.models import User
 from src.auth.repo import AuthRepository
-from src.auth.schemas import TokenPayload
+from src.auth.schemas import TokenPayload, UserRead
 from src.auth.service import AuthService
 from src.core.config import settings
 from src.core.security import oauth2_scheme, ALGORITHM
@@ -28,7 +27,7 @@ async def get_auth_service(repo: AuthRepository = Depends(get_auth_repo)):
 async def get_current_user(
         token: str = Depends(oauth2_scheme),
         auth_service: BaseAuthService = Depends(get_auth_service),
-) -> User:
+) -> UserRead:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -50,8 +49,8 @@ async def get_current_user(
 
 
 async def get_current_superuser(
-    current_user: User = Depends(get_current_user),
-) -> User:
+    current_user: UserRead = Depends(get_current_user),
+) -> UserRead:
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=403, detail="The user doesn't have enough privileges"

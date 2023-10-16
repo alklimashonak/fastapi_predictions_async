@@ -7,7 +7,9 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.auth.models import User # noqa
-from src.events.models import Event, Match # noqa
+from src.events.models import Event # noqa
+from src.matches.models import Match # noqa
+from src.predictions.models import Prediction # noqa
 from src.core.config import settings
 from src.db.database import Base
 
