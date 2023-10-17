@@ -9,10 +9,10 @@ from src.db.database import Base
 from src.predictions.models import Prediction
 
 
-class Status(enum.IntEnum):
-    not_started = 0
-    in_process = 1
-    finished = 2
+class MatchStatus(enum.IntEnum):
+    upcoming = 0
+    ongoing = 1
+    completed = 2
 
 
 class Match(Base):
@@ -21,7 +21,7 @@ class Match(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     home_team: Mapped[str] = mapped_column(String(128), nullable=False)
     away_team: Mapped[str] = mapped_column(String(128), nullable=False)
-    status: Mapped[Status] = mapped_column(pgEnum(Status), default=Status.not_started, nullable=False)
+    status: Mapped[MatchStatus] = mapped_column(pgEnum(MatchStatus), default=MatchStatus.upcoming, nullable=False)
     home_goals: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
     away_goals: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))

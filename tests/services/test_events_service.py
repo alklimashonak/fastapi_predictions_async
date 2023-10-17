@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from src.events.base import BaseEventService
-from src.events.models import Status
+from src.events.models import EventStatus
 from src.events.schemas import EventCreate
 from src.events.service import EventService
 from tests.utils import EventModel, gen_matches
@@ -62,7 +62,7 @@ class TestCreate:
 
         assert hasattr(event, 'id')
         assert event.name == new_event.name
-        assert event.status == Status.not_started
+        assert event.status == EventStatus.created
         assert event.deadline == new_event.deadline
 
 
@@ -80,19 +80,19 @@ class TestUpdate:
             event_service: BaseEventService,
             event1: EventModel,
     ) -> None:
-        event1.status = Status.in_process
+        event1.status = EventStatus.ongoing
 
         with pytest.raises(HTTPException):
             await event_service.run(event_id=event1.id)
 
-        event1.status = Status.not_started
+        event1.status = EventStatus.created
 
     async def test_run_without_5_matches_raises_err(
             self,
             event_service: BaseEventService,
             event1: EventModel,
     ) -> None:
-        assert event1.status == Status.not_started
+        assert event1.status == EventStatus.created
 
         with pytest.raises(HTTPException):
             await event_service.run(event_id=event1.id)
@@ -106,7 +106,7 @@ class TestUpdate:
 
         updated_event = await event_service.run(event_id=event1.id)
 
-        assert updated_event.status == Status.in_process
+        assert updated_event.status == EventStatus.upcoming
 
 
 @pytest.mark.asyncio

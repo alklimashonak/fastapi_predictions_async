@@ -16,7 +16,7 @@ from src.core.config import settings
 from src.core.security import get_password_hash
 from src.db.database import Base
 from src.events.base import BaseEventRepository
-from src.events.models import Event, Status
+from src.events.models import Event, EventStatus
 from src.events.repo import EventRepository
 from src.matches.base import BaseMatchRepository
 from src.matches.models import Match
@@ -51,7 +51,7 @@ def test_event() -> Event:
         id=123,
         name='Event',
         deadline=datetime.now(tz=timezone.utc),
-        status=Status.not_started,
+        #status=EventStatus.created,
     )
 
 

@@ -9,10 +9,13 @@ from src.db.database import Base
 from src.matches.models import Match
 
 
-class Status(enum.IntEnum):
-    not_started = 0
-    in_process = 1
-    finished = 2
+class EventStatus(enum.IntEnum):
+    created = 0
+    upcoming = 1
+    ongoing = 2
+    completed = 3
+    archived = 4
+    cancelled = 5
 
 
 class Event(Base):
@@ -20,7 +23,7 @@ class Event(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
-    status: Mapped[Status] = mapped_column(pgEnum(Status), default=Status.not_started, nullable=False)
+    status: Mapped[EventStatus] = mapped_column(pgEnum(EventStatus), default=EventStatus.created, nullable=False)
     deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     matches: Mapped[list['Match']] = relationship('Match', backref='event', lazy='selectin')

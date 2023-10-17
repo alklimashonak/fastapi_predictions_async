@@ -9,9 +9,10 @@ from src.auth.base import BaseAuthRepository
 from src.auth.schemas import UserCreate
 from src.core.security import get_password_hash
 from src.events.base import BaseEventRepository
-from src.events.models import Status
+from src.events.models import EventStatus
 from src.events.schemas import EventCreate
 from src.matches.base import BaseMatchRepository
+from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate
 from src.predictions.base import BasePredictionRepository
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
@@ -47,7 +48,7 @@ def match1() -> MatchModel:
         event_id=123,
         home_team='Stoke City',
         away_team='Swansea',
-        status=Status.not_started,
+        status=MatchStatus.upcoming,
         start_time=datetime.utcnow(),
     )
 
@@ -57,7 +58,7 @@ def event1(match1: MatchModel) -> EventModel:
     return EventModel(
         id=123,
         name='event1',
-        status=Status.not_started,
+        status=EventStatus.created,
         deadline=datetime.utcnow(),
         matches=[match1],
     )
@@ -141,7 +142,7 @@ def mock_event_repo():
         async def run(self, event_id: int) -> EventModel | None:
             for event in self.events:
                 if event.id == event_id:
-                    event.status = Status.in_process
+                    event.status = EventStatus.upcoming
                     return event
 
         async def delete(self, event_id: int) -> None:

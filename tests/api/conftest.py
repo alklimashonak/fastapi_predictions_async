@@ -13,9 +13,10 @@ from src.auth.base import BaseAuthService
 from src.auth.schemas import UserCreate
 from src.core.security import get_password_hash, verify_password
 from src.events.base import BaseEventService
-from src.events.models import Status
+from src.events.models import EventStatus
 from src.events.schemas import EventCreate
 from src.matches.base import BaseMatchService
+from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
@@ -30,7 +31,7 @@ def match1() -> MatchModel:
         event_id=123,
         home_team='Stoke City',
         away_team='Swansea',
-        status=Status.not_started,
+        status=MatchStatus.upcoming,
         start_time=datetime.utcnow(),
     )
 
@@ -40,7 +41,7 @@ def event1(match1: MatchModel) -> EventModel:
     return EventModel(
         id=123,
         name='event1',
-        status=Status.not_started,
+        status=EventStatus.created,
         deadline=datetime.utcnow(),
         matches=[match1] + gen_matches(event_id=123, count=4),
     )
@@ -51,7 +52,7 @@ def active_event(match1: MatchModel) -> EventModel:
     return EventModel(
         id=124,
         name='event1',
-        status=Status.in_process,
+        status=EventStatus.upcoming,
         deadline=datetime.utcnow(),
         matches=[match1],
     )
@@ -174,7 +175,7 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
             async def run(self, event_id: int) -> EventModel:
                 event = await self.get_by_id(event_id=event_id)
 
-                if event.status != Status.not_started:
+                if event.status != EventStatus.created:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail='You can run only not started events'
@@ -187,7 +188,7 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
                     return EventModel(
                         id=event.id,
                         name=event.name,
-                        status=Status.in_process,
+                        status=EventStatus.upcoming,
                         deadline=event.deadline,
                         matches=event.matches,
                     )

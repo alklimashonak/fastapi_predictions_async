@@ -1,11 +1,11 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Callable
 
 import pytest
 from fastapi import HTTPException
 
 from src.matches.base import BaseMatchService
-from src.matches.models import Status
+from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate
 from src.matches.service import MatchService
 from tests.utils import MatchModel, EventModel
@@ -30,7 +30,7 @@ async def test_can_create_match(match_service: BaseMatchService, event1: EventMo
     assert hasattr(match, 'id')
     assert match.home_team == match_data.home_team
     assert match.away_team == match_data.away_team
-    assert match.status == Status.not_started
+    assert match.status == MatchStatus.upcoming
     assert match.start_time == match_data.start_time
 
 

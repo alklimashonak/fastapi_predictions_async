@@ -4,8 +4,8 @@ from datetime import datetime
 from itertools import count
 from uuid import UUID, uuid4
 
-from src.events.models import Status as EventStatus
-from src.matches.models import Status as MatchStatus
+from src.events.models import EventStatus
+from src.matches.models import MatchStatus
 
 
 user_password = 'user'
@@ -27,7 +27,7 @@ class MatchModel:
     away_team: str
     event_id: int
     start_time: datetime
-    status: EventStatus = EventStatus.not_started
+    status: EventStatus = EventStatus.created
     home_goals: int | None = None
     away_goals: int | None = None
     id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
@@ -38,7 +38,7 @@ class EventModel:
     name: str
     deadline: datetime
     matches: list[MatchModel] = dataclasses.field(default_factory=lambda: [])
-    status: MatchStatus = MatchStatus.not_started
+    status: MatchStatus = MatchStatus.upcoming
     id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
 
 

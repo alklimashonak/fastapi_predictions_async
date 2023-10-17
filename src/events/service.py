@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from src.events.base import BaseEventService, BaseEventRepository
+from src.events.models import EventStatus
 from src.events.schemas import EventCreate, EventRead
 
 
@@ -33,7 +34,7 @@ class EventService(BaseEventService):
         if not event:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
 
-        if event.status != 0:
+        if event.status != EventStatus.created:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='You can run only not started events')
 
         if len(event.matches) != 5:

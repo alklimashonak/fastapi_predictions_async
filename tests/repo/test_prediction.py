@@ -1,5 +1,5 @@
 import pytest
-from asyncpg import ForeignKeyViolationError, UniqueViolationError
+
 from sqlalchemy.exc import IntegrityError
 
 from src.auth.models import User
@@ -48,7 +48,8 @@ async def test_unique_prediction(prediction_repo: BasePredictionRepository, test
 
 
 @pytest.mark.asyncio
-async def test_create_prediction(prediction_repo: BasePredictionRepository, another_match: Match, test_user: User) -> None:
+async def test_create_prediction(prediction_repo: BasePredictionRepository, another_match: Match,
+                                 test_user: User) -> None:
     prediction = PredictionCreate(
         home_goals=1,
         away_goals=1,

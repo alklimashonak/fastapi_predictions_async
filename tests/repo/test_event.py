@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 
 from src.events.base import BaseEventRepository
-from src.events.models import Event, Status
+from src.events.models import Event, EventStatus
 from src.events.schemas import EventCreate
 
 
@@ -35,7 +35,7 @@ class TestCreate:
 
         assert db_event.id
         assert db_event.name == event.name
-        assert db_event.status == Status.not_started
+        assert db_event.status == EventStatus.created
         assert db_event.deadline == event.deadline
         assert db_event.matches == []
 
@@ -43,11 +43,11 @@ class TestCreate:
 @pytest.mark.asyncio
 class TestUpdate:
     async def test_run_event(self, event_repo: BaseEventRepository, test_event: Event) -> None:
-        assert test_event.status == Status.not_started
+        assert test_event.status == EventStatus.created
 
         updated_event = await event_repo.run(event_id=test_event.id)
 
-        assert updated_event.status == Status.in_process
+        assert updated_event.status == EventStatus.upcoming
 
 
 @pytest.mark.asyncio

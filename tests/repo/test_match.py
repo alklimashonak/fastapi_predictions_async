@@ -4,7 +4,7 @@ import pytest
 
 from src.events.models import Event
 from src.matches.base import BaseMatchRepository
-from src.matches.models import Match, Status
+from src.matches.models import Match, MatchStatus
 from src.matches.schemas import MatchCreate
 
 
@@ -19,7 +19,7 @@ async def test_get_match_by_id(
     assert db_match.home_team == test_match.home_team
     assert db_match.away_team == test_match.away_team
     assert db_match.start_time == test_match.start_time
-    assert db_match.status == Status.not_started
+    assert db_match.status == MatchStatus.upcoming
     assert db_match.event_id == test_match.event_id
 
 
@@ -37,7 +37,7 @@ async def test_create_match(match_repo: BaseMatchRepository, test_event: Event) 
     assert db_match.home_team == match.home_team
     assert db_match.away_team == match.away_team
     assert db_match.start_time == match.start_time
-    assert db_match.status == Status.not_started
+    assert db_match.status == MatchStatus.upcoming
     assert db_match.event_id == test_event.id
 
 
