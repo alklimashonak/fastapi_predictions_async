@@ -27,7 +27,7 @@ class MatchModel:
     away_team: str
     event_id: int
     start_time: datetime
-    status: EventStatus = EventStatus.created
+    status: MatchStatus = MatchStatus.upcoming
     home_goals: int | None = None
     away_goals: int | None = None
     id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
@@ -38,7 +38,7 @@ class EventModel:
     name: str
     deadline: datetime
     matches: list[MatchModel] = dataclasses.field(default_factory=lambda: [])
-    status: MatchStatus = MatchStatus.upcoming
+    status: EventStatus = EventStatus.created
     id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
 
 

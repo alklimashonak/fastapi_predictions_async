@@ -5,7 +5,7 @@ from starlette import status
 
 from src.events.base import BaseEventService, BaseEventRepository
 from src.events.models import EventStatus
-from src.events.schemas import EventCreate, EventRead
+from src.events.schemas import EventCreate, EventRead, EventUpdate
 
 
 class EventService(BaseEventService):
@@ -40,7 +40,9 @@ class EventService(BaseEventService):
         if len(event.matches) != 5:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
 
-        event = await self.repo.run(event_id=event_id)
+        updated_event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.upcoming)
+
+        event = await self.repo.update(event_id=event_id, event=updated_event)
 
         return EventRead.from_orm(event)
 

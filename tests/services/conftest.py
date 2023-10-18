@@ -10,7 +10,7 @@ from src.auth.schemas import UserCreate
 from src.core.security import get_password_hash
 from src.events.base import BaseEventRepository
 from src.events.models import EventStatus
-from src.events.schemas import EventCreate
+from src.events.schemas import EventCreate, EventUpdate
 from src.matches.base import BaseMatchRepository
 from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate
@@ -139,11 +139,13 @@ def mock_event_repo():
         async def create(self, event: EventCreate) -> EventModel:
             return EventModel(**event.dict())
 
-        async def run(self, event_id: int) -> EventModel | None:
-            for event in self.events:
-                if event.id == event_id:
-                    event.status = EventStatus.upcoming
-                    return event
+        async def update(self, event_id: int, event: EventUpdate) -> EventModel | None:
+            for ev in self.events:
+                if ev.id == event_id:
+                    ev.name = event.name
+                    ev.deadline = event.deadline
+                    ev.status = event.status
+                    return ev
 
         async def delete(self, event_id: int) -> None:
             return

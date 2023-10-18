@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from src.events.models import Event
-from src.events.schemas import EventCreate, EventRead
+from src.events.schemas import EventCreate, EventRead, EventUpdate
 
 
 class BaseEventRepository:
@@ -14,7 +14,7 @@ class BaseEventRepository:
     async def create(self, event: EventCreate) -> Event:
         raise NotImplementedError
 
-    async def run(self, event_id: int) -> Event:
+    async def update(self, event_id: int, event: EventUpdate) -> Event:
         raise NotImplementedError
 
     async def delete(self, event_id: int) -> None:

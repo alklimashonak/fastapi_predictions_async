@@ -4,7 +4,7 @@ import pytest
 
 from src.events.base import BaseEventRepository
 from src.events.models import Event, EventStatus
-from src.events.schemas import EventCreate
+from src.events.schemas import EventCreate, EventUpdate
 
 
 @pytest.mark.asyncio
@@ -45,7 +45,9 @@ class TestUpdate:
     async def test_run_event(self, event_repo: BaseEventRepository, test_event: Event) -> None:
         assert test_event.status == EventStatus.created
 
-        updated_event = await event_repo.run(event_id=test_event.id)
+        event = EventUpdate(name=test_event.name, deadline=test_event.deadline, status=EventStatus.upcoming)
+
+        updated_event = await event_repo.update(event_id=test_event.id, event=event)
 
         assert updated_event.status == EventStatus.upcoming
 

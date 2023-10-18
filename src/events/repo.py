@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from src.events.base import BaseEventRepository
 from src.events.models import Event, EventStatus
-from src.events.schemas import EventCreate
+from src.events.schemas import EventCreate, EventUpdate
 
 
 class EventRepository(BaseEventRepository):
@@ -45,8 +45,8 @@ class EventRepository(BaseEventRepository):
 
         return new_event
 
-    async def run(self, event_id: int) -> Event:
-        stmt = update(Event).where(Event.id == event_id).values(status=EventStatus.upcoming).returning(Event)
+    async def update(self, event_id: int, event: EventUpdate) -> Event:
+        stmt = update(Event).where(Event.id == event_id).values(**event.dict()).returning(Event)
         result = await self.session.execute(stmt)
 
         await self.session.commit()
