@@ -65,6 +65,17 @@ def event1(match1: MatchModel) -> EventModel:
 
 
 @pytest.fixture
+def event2() -> EventModel:
+    return EventModel(
+        id=124,
+        name='event2',
+        status=EventStatus.upcoming,
+        deadline=datetime.utcnow(),
+        matches=[],
+    )
+
+
+@pytest.fixture
 def prediction1(active_user: UserModel, match1: MatchModel) -> PredictionModel:
     return PredictionModel(
         home_goals=1,

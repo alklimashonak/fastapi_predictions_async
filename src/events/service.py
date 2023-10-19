@@ -40,11 +40,11 @@ class EventService(BaseEventService):
         if len(event.matches) != 5:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
 
-        updated_event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.upcoming)
+        event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.upcoming)
 
-        event = await self.repo.update(event_id=event_id, event=updated_event)
+        updated_event = await self.repo.update(event_id=event_id, event=event)
 
-        return EventRead.from_orm(event)
+        return EventRead.from_orm(updated_event)
 
     async def delete(self, event_id: int) -> None:
         event = await self.repo.get_by_id(event_id=event_id)

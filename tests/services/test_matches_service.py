@@ -12,9 +12,16 @@ from tests.utils import MatchModel, EventModel
 
 
 @pytest.fixture
-def match_service(mock_match_repo: Callable, match1: MatchModel) -> BaseMatchService:
+def match_service(
+        mock_match_repo: Callable,
+        mock_event_repo: Callable,
+        match1: MatchModel,
+        event1: EventModel,
+        event2: EventModel,
+) -> BaseMatchService:
     repo = mock_match_repo(matches=[match1])
-    yield MatchService(repo)
+    event_repo = mock_event_repo(events=[event1, event2])
+    yield MatchService(repo, event_repo=event_repo)
 
 
 @pytest.mark.asyncio
@@ -32,6 +39,18 @@ async def test_can_create_match(match_service: BaseMatchService, event1: EventMo
     assert match.away_team == match_data.away_team
     assert match.status == MatchStatus.upcoming
     assert match.start_time == match_data.start_time
+
+
+@pytest.mark.asyncio
+async def test_create_for_ongoing_event_raises_exc(match_service: BaseMatchService, event2: EventModel) -> None:
+    match_data = MatchCreate(
+        home_team='Roma',
+        away_team='Juventus',
+        start_time=datetime.utcnow(),
+    )
+
+    with pytest.raises(HTTPException):
+        await match_service.create(match=match_data, event_id=event2.id)
 
 
 @pytest.mark.asyncio
