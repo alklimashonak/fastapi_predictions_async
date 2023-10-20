@@ -12,8 +12,14 @@ from tests.utils import EventModel, gen_matches
 
 
 @pytest.fixture
-def event_service(mock_event_repo: Callable, event1: EventModel) -> BaseEventService:
-    repo = mock_event_repo(events=[event1])
+def event_service(
+        mock_event_repo: Callable,
+        event1: EventModel,
+        event2: EventModel,
+        completed_event: EventModel,
+        ready_to_finish_event: EventModel,
+) -> BaseEventService:
+    repo = mock_event_repo(events=[event1, event2, completed_event, ready_to_finish_event])
     yield EventService(repo)
 
 
@@ -22,7 +28,7 @@ class TestGetMultiple:
     async def test_get_multiple_events_works(self, event_service: BaseEventService) -> None:
         events = await event_service.get_multiple(admin_mode=False)
 
-        assert len(events) == 1
+        assert len(events) == 4
 
 
 @pytest.mark.asyncio
@@ -107,6 +113,38 @@ class TestUpdate:
         updated_event = await event_service.run(event_id=event1.id)
 
         assert updated_event.status == EventStatus.ongoing
+
+    async def test_finish_not_existed_event_raises_err(
+            self,
+            event_service: BaseEventService,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await event_service.finish(event_id=99213)
+
+    async def test_finish_completed_event_raises_err(
+            self,
+            event_service: BaseEventService,
+            completed_event: EventModel,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await event_service.finish(event_id=completed_event.id)
+
+    async def test_finish_event_with_not_competed_matches_raises_err(
+            self,
+            event_service: BaseEventService,
+            event2: EventModel,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await event_service.finish(event_id=event2.id)
+
+    async def test_ready_to_finish_event_successfully_complete(
+            self,
+            event_service: BaseEventService,
+            ready_to_finish_event: EventModel,
+    ) -> None:
+        updated_event = await event_service.finish(event_id=ready_to_finish_event.id)
+
+        assert updated_event.status == EventStatus.completed
 
 
 @pytest.mark.asyncio

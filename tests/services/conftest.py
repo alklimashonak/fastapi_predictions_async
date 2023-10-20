@@ -16,7 +16,8 @@ from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate, MatchUpdate
 from src.predictions.base import BasePredictionRepository
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
-from tests.utils import MatchModel, EventModel, UserModel, PredictionModel, user_password, superuser_password
+from tests.utils import MatchModel, EventModel, UserModel, PredictionModel, user_password, superuser_password, \
+    gen_matches
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,29 @@ def event2() -> EventModel:
         name='event2',
         status=EventStatus.upcoming,
         deadline=datetime.utcnow(),
-        matches=[],
+        matches=gen_matches(event_id=125, count=5),
+    )
+
+
+@pytest.fixture
+def completed_event() -> EventModel:
+    return EventModel(
+        id=125,
+        name='event3',
+        status=EventStatus.completed,
+        deadline=datetime.utcnow(),
+        matches=gen_matches(event_id=125, count=5, finished=True),
+    )
+
+
+@pytest.fixture
+def ready_to_finish_event() -> EventModel:
+    return EventModel(
+        id=126,
+        name='event4',
+        status=EventStatus.ongoing,
+        deadline=datetime.utcnow(),
+        matches=gen_matches(event_id=125, count=5, finished=True),
     )
 
 
@@ -154,6 +177,8 @@ def mock_event_repo():
         ) -> Sequence[EventModel]:
             if offset > 0 or limit < 1:
                 return []
+            for event in self.events:
+                event.matches = []
             return self.events
 
         async def get_by_id(self, event_id: int) -> EventModel | None:

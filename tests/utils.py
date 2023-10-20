@@ -64,5 +64,20 @@ def gen_random_match(event_id: int):
     )
 
 
-def gen_matches(event_id: int, count: int):
+def gen_finished_match(event_id: int):
+    return MatchModel(
+        id=random.randint(a=1, b=999),
+        home_team=random.choice(teams),
+        away_team=random.choice(teams),
+        start_time=datetime.utcnow(),
+        event_id=event_id,
+        status=MatchStatus.completed,
+        home_goals=random.randint(a=0, b=9),
+        away_goals=random.randint(a=0, b=9),
+    )
+
+
+def gen_matches(event_id: int, count: int, finished: bool = False):
+    if finished:
+        return [gen_finished_match(event_id=event_id) for i in range(count)]
     return [gen_random_match(event_id=event_id) for i in range(count)]

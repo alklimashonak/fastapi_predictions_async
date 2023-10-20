@@ -6,6 +6,7 @@ from starlette import status
 from src.events.base import BaseEventService, BaseEventRepository
 from src.events.models import EventStatus
 from src.events.schemas import EventCreate, EventRead, EventUpdate
+from src.matches.models import MatchStatus
 
 
 class EventService(BaseEventService):
@@ -43,6 +44,25 @@ class EventService(BaseEventService):
         event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.ongoing)
 
         updated_event = await self.repo.update(event_id=event_id, event=event)
+
+        return EventRead.from_orm(updated_event)
+
+    async def finish(self, event_id: int) -> EventRead:
+        event = await self.repo.get_by_id(event_id=event_id)
+
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
+
+        if event.status != EventStatus.ongoing:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event should have ongoing status')
+
+        for match in event.matches:
+            if match.status < MatchStatus.completed:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='All matches should be finished')
+
+        data = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.completed)
+
+        updated_event = await self.repo.update(event_id=event_id, event=data)
 
         return EventRead.from_orm(updated_event)
 

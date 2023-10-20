@@ -34,5 +34,8 @@ class BaseEventService:
     async def run(self, event_id: int) -> EventRead:
         raise NotImplementedError
 
+    async def finish(self, event_id: int) -> EventRead:
+        raise NotImplementedError
+
     async def delete(self, event_id: int) -> None:
         raise NotImplementedError
