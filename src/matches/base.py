@@ -23,3 +23,6 @@ class BaseMatchService:
 
     async def delete(self, match_id: int) -> None:
         raise NotImplementedError
+
+    async def finish(self, match_id: int, home_goals: int, away_goals: int) -> MatchRead:
+        raise NotImplementedError

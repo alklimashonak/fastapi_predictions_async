@@ -13,7 +13,7 @@ from src.events.models import EventStatus
 from src.events.schemas import EventCreate, EventUpdate
 from src.matches.base import BaseMatchRepository
 from src.matches.models import MatchStatus
-from src.matches.schemas import MatchCreate
+from src.matches.schemas import MatchCreate, MatchUpdate
 from src.predictions.base import BasePredictionRepository
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 from tests.utils import MatchModel, EventModel, UserModel, PredictionModel, user_password, superuser_password
@@ -50,6 +50,20 @@ def match1() -> MatchModel:
         away_team='Swansea',
         status=MatchStatus.upcoming,
         start_time=datetime.utcnow(),
+    )
+
+
+@pytest.fixture
+def completed_match() -> MatchModel:
+    return MatchModel(
+        id=124,
+        event_id=123,
+        home_team='Everton',
+        away_team='Hull City',
+        status=MatchStatus.completed,
+        start_time=datetime.utcnow(),
+        home_goals=1,
+        away_goals=1,
     )
 
 
@@ -167,7 +181,7 @@ def mock_event_repo():
 @pytest.fixture(scope='session')
 def mock_match_repo():
     class MockMatchRepository(BaseMatchRepository):
-        def __init__(self, matches):
+        def __init__(self, matches: list[MatchModel]):
             self.matches = matches
 
         async def create(self, match: MatchCreate, event_id: int) -> MatchModel:
@@ -177,6 +191,17 @@ def mock_match_repo():
             for match in self.matches:
                 if match.id == match_id:
                     return match
+
+        async def update(self, match_id: int, match: MatchUpdate) -> MatchModel:
+            for mat in self.matches:
+                if mat.id == match_id:
+                    mat.home_team = match.home_team
+                    mat.away_team = match.away_team
+                    mat.start_time = match.start_time
+                    mat.status = match.status
+                    mat.home_goals = match.home_goals
+                    mat.away_goals = match.away_goals
+                    return mat
 
         async def delete(self, match_id: int) -> None:
             return

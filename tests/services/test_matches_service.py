@@ -16,10 +16,11 @@ def match_service(
         mock_match_repo: Callable,
         mock_event_repo: Callable,
         match1: MatchModel,
+        completed_match: MatchModel,
         event1: EventModel,
         event2: EventModel,
 ) -> BaseMatchService:
-    repo = mock_match_repo(matches=[match1])
+    repo = mock_match_repo(matches=[match1, completed_match])
     event_repo = mock_event_repo(events=[event1, event2])
     yield MatchService(repo, event_repo=event_repo)
 
@@ -51,6 +52,24 @@ async def test_create_for_ongoing_event_raises_exc(match_service: BaseMatchServi
 
     with pytest.raises(HTTPException):
         await match_service.create(match=match_data, event_id=event2.id)
+
+
+@pytest.mark.asyncio
+async def test_finish_upcoming_match_is_ok(match_service: BaseMatchService, match1: MatchModel) -> None:
+    finished_match = await match_service.finish(match_id=match1.id, home_goals=3, away_goals=3)
+
+    assert finished_match.id == match1.id
+    assert finished_match.home_team == match1.home_team
+    assert finished_match.away_team == match1.away_team
+    assert finished_match.status == MatchStatus.completed
+    assert finished_match.home_goals == 3
+    assert finished_match.away_goals == 3
+
+
+@pytest.mark.asyncio
+async def test_finish_completed_match_raises_exc(match_service: BaseMatchService, completed_match: MatchModel) -> None:
+    with pytest.raises(HTTPException):
+        await match_service.finish(match_id=completed_match.id, home_goals=2, away_goals=2)
 
 
 @pytest.mark.asyncio
