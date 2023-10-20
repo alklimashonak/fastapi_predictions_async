@@ -34,13 +34,13 @@ class EventService(BaseEventService):
         if not event:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
 
-        if event.status != EventStatus.created:
+        if event.status > EventStatus.upcoming:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='You can run only not started events')
 
         if len(event.matches) != 5:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
 
-        event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.upcoming)
+        event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.ongoing)
 
         updated_event = await self.repo.update(event_id=event_id, event=event)
 

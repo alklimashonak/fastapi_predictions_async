@@ -75,7 +75,7 @@ class TestUpdate:
         with pytest.raises(HTTPException):
             await event_service.run(event_id=99213)
 
-    async def test_run_event_in_progress_raises_err(
+    async def test_run_ongoing_event_raises_err(
             self,
             event_service: BaseEventService,
             event1: EventModel,
@@ -97,7 +97,7 @@ class TestUpdate:
         with pytest.raises(HTTPException):
             await event_service.run(event_id=event1.id)
 
-    async def test_run_correct_event_returns_event(
+    async def test_run_created_event_returns_event(
             self,
             event_service: BaseEventService,
             event1: EventModel,
@@ -106,7 +106,7 @@ class TestUpdate:
 
         updated_event = await event_service.run(event_id=event1.id)
 
-        assert updated_event.status == EventStatus.upcoming
+        assert updated_event.status == EventStatus.ongoing
 
 
 @pytest.mark.asyncio
