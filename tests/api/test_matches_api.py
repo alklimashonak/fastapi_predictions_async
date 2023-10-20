@@ -126,3 +126,58 @@ class TestDeleteMatch:
         )
 
         assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.asyncio
+class TestFinishMatch:
+    async def test_missing_token(self, async_client: AsyncClient, match1: MatchModel) -> None:
+        response = await async_client.patch(
+            f'/matches/{match1.id}/finish?home_goals=4&away_goals=4',
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()['detail'] == 'Not authenticated'
+
+    async def test_forbidden(self, async_client: AsyncClient, active_user: UserModel, match1: MatchModel) -> None:
+        response = await async_client.patch(
+            f'/matches/{match1.id}/finish?home_goals=4&away_goals=4',
+            headers={'Authorization': active_user.email},
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_match_not_found(self, async_client: AsyncClient, superuser: UserModel) -> None:
+        response = await async_client.patch(
+            '/matches/99999/finish?home_goals=4&away_goals=4',
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json()['detail'] == 'Match not found'
+
+    async def test_match_already_is_finished(
+            self,
+            async_client: AsyncClient,
+            superuser: UserModel,
+            completed_match: MatchModel
+    ) -> None:
+        response = await async_client.patch(
+            f'/matches/{completed_match.id}/finish?home_goals=4&away_goals=4',
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()['detail'] == 'Match is already finished'
+
+    async def test_finishing_is_working(
+            self,
+            async_client: AsyncClient,
+            superuser: UserModel,
+            match1: MatchModel,
+    ) -> None:
+        response = await async_client.patch(
+            f'/matches/{match1.id}/finish?home_goals=4&away_goals=4',
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_200_OK

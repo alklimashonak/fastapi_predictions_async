@@ -33,3 +33,17 @@ async def delete_match(
         match_service: BaseMatchService = Depends(get_match_service),
 ):
     return await match_service.delete(match_id=match_id)
+
+
+@router.patch(
+    '/matches/{match_id}/finish',
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(get_current_superuser)],
+)
+async def finish_match(
+        match_id: int,
+        home_goals: int,
+        away_goals: int,
+        match_service: BaseMatchService = Depends(get_match_service),
+):
+    return await match_service.finish(match_id=match_id, home_goals=home_goals, away_goals=away_goals)

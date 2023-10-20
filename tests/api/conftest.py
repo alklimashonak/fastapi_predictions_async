@@ -37,6 +37,18 @@ def match1() -> MatchModel:
 
 
 @pytest.fixture(scope='session')
+def completed_match() -> MatchModel:
+    return MatchModel(
+        id=124,
+        event_id=123,
+        home_team='Everton',
+        away_team='Hull City',
+        status=MatchStatus.completed,
+        start_time=datetime.utcnow(),
+    )
+
+
+@pytest.fixture(scope='session')
 def event1(match1: MatchModel) -> EventModel:
     return EventModel(
         id=123,
@@ -202,7 +214,7 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
 
 
 @pytest.fixture(scope='session')
-def fake_get_match_service(match1: MatchModel):
+def fake_get_match_service(match1: MatchModel, completed_match: MatchModel):
     def _fake_get_match_service() -> BaseMatchService:
         class MockMatchService(BaseMatchService):
             def __init__(self, matches: list[MatchModel]):
@@ -215,7 +227,19 @@ def fake_get_match_service(match1: MatchModel):
                 if not [match for match in self.matches if match.id == match_id]:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
 
-        yield MockMatchService(matches=[match1])
+            async def finish(self, match_id: int, home_goals: int, away_goals: int) -> MatchModel:
+                for match in self.matches:
+                    if match.id == match_id:
+                        if match.status > MatchStatus.ongoing:
+                            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                detail='Match is already finished'
+                            )
+                        match.status = MatchStatus.completed
+                        return match
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
+
+        yield MockMatchService(matches=[match1, completed_match])
 
     return _fake_get_match_service
 
