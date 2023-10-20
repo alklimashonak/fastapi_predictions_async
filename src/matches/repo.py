@@ -1,9 +1,10 @@
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.events.models import Match
 from src.events.schemas import MatchCreate
 from src.matches.base import BaseMatchRepository
+from src.matches.schemas import MatchUpdate
 
 
 class MatchRepository(BaseMatchRepository):
@@ -22,6 +23,14 @@ class MatchRepository(BaseMatchRepository):
         await self.session.commit()
         await self.session.refresh(new_match)
         return new_match
+
+    async def update(self, match_id: int, match: MatchUpdate) -> Match:
+        stmt = update(Match).where(Match.id == match_id).values(**match.dict()).returning(Match)
+        result = await self.session.execute(stmt)
+
+        await self.session.commit()
+
+        return result.scalar_one_or_none()
 
     async def delete(self, match_id: int) -> None:
         stmt = delete(Match).where(Match.id == match_id)

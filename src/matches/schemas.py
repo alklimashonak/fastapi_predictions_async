@@ -18,6 +18,15 @@ class MatchCreate(BaseModel):
     start_time: datetime = Field(default=datetime.utcnow()+timedelta(days=1))
 
 
+class MatchUpdate(BaseModel):
+    home_team: str
+    away_team: str
+    status: int
+    home_goals: int | None = None
+    away_goals: int | None = None
+    start_time: datetime
+
+
 class MatchRead(MatchBase):
     id: int
     home_team: str
