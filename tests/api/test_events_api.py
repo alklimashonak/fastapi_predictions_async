@@ -9,6 +9,7 @@ from httpx import AsyncClient
 from starlette import status
 
 from src.auth.dependencies import get_current_user
+from src.events.models import EventStatus
 from src.events.router import router as event_router
 from src.events.dependencies import get_event_service
 from tests.api.conftest import UserModel
@@ -126,6 +127,34 @@ class TestUpdateEvent:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json()['detail'] == 'You can run only not started events'
+
+    async def test_can_not_finish_upcoming_event(
+            self,
+            async_client: AsyncClient,
+            superuser: UserModel,
+            active_event: EventModel
+    ) -> None:
+        response = await async_client.patch(
+            f'/events/{active_event.id}/finish?home_goals=5&away_goals=6',
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()['detail'] == 'Event should have ongoing status'
+
+    async def test_can_finish_ready_event(
+            self,
+            async_client: AsyncClient,
+            superuser: UserModel,
+            ready_to_finish_event: EventModel
+    ) -> None:
+        response = await async_client.patch(
+            f'/events/{ready_to_finish_event.id}/finish',
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()['status'] == EventStatus.completed
 
     async def test_superuser_has_access(self, async_client: AsyncClient,
                                         superuser: UserModel, event1: EventModel) -> None:

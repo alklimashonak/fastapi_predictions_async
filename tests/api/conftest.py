@@ -71,6 +71,17 @@ def active_event(match1: MatchModel) -> EventModel:
 
 
 @pytest.fixture(scope='session')
+def ready_to_finish_event() -> EventModel:
+    return EventModel(
+        id=125,
+        name='event2',
+        status=EventStatus.ongoing,
+        deadline=datetime.utcnow(),
+        matches=gen_matches(event_id=125, count=5, finished=True),
+    )
+
+
+@pytest.fixture(scope='session')
 def active_user() -> UserModel:
     return UserModel(
         email="testuser@example.com",
@@ -161,7 +172,7 @@ def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
 
 
 @pytest.fixture(scope='session')
-def fake_get_event_service(event1: EventModel, active_event: EventModel):
+def fake_get_event_service(event1: EventModel, active_event: EventModel, ready_to_finish_event: EventModel):
     def _fake_get_event_service() -> BaseEventService:
         class MockEventService(BaseEventService):
             def __init__(self, events: list[EventModel]):
@@ -205,10 +216,34 @@ def fake_get_event_service(event1: EventModel, active_event: EventModel):
                         matches=event.matches,
                     )
 
+            async def finish(self, event_id: int) -> EventModel:
+                event = await self.get_by_id(event_id=event_id)
+
+                if event.status != EventStatus.ongoing:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail='Event should have ongoing status'
+                    )
+
+                for match in event.matches:
+                    if match.status < MatchStatus.completed:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail='All matches should be finished'
+                        )
+
+                return EventModel(
+                    id=event.id,
+                    name=event.name,
+                    status=EventStatus.completed,
+                    deadline=event.deadline,
+                    matches=event.matches,
+                )
+
             async def delete(self, event_id: int) -> None:
                 await self.get_by_id(event_id=event_id)
 
-        yield MockEventService(events=[event1, active_event])
+        yield MockEventService(events=[event1, active_event, ready_to_finish_event])
 
     return _fake_get_event_service
 
