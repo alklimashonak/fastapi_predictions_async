@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from fastapi.params import Query
 from starlette import status
 
 from src.auth.dependencies import get_current_superuser
@@ -42,8 +43,8 @@ async def delete_match(
 )
 async def finish_match(
         match_id: int,
-        home_goals: int,
-        away_goals: int,
+        home_goals: int = Query(ge=0, le=9),
+        away_goals: int = Query(ge=0, le=9),
         match_service: BaseMatchService = Depends(get_match_service),
 ):
     return await match_service.finish(match_id=match_id, home_goals=home_goals, away_goals=away_goals)

@@ -17,6 +17,12 @@ class MatchService(BaseMatchService):
     async def create(self, match: MatchCreate, event_id: int) -> MatchRead:
         event = await self.event_repo.get_by_id(event_id=event_id)
 
+        if not event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Event not found'
+            )
+
         if event.status != EventStatus.created:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

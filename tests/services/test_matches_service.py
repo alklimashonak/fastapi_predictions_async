@@ -43,6 +43,18 @@ async def test_can_create_match(match_service: BaseMatchService, event1: EventMo
 
 
 @pytest.mark.asyncio
+async def test_create_match_for_not_existed_event(match_service: BaseMatchService) -> None:
+    match_data = MatchCreate(
+        home_team='Roma',
+        away_team='Juventus',
+        start_time=datetime.utcnow(),
+    )
+
+    with pytest.raises(HTTPException):
+        await match_service.create(match=match_data, event_id=43)
+
+
+@pytest.mark.asyncio
 async def test_create_for_ongoing_event_raises_exc(match_service: BaseMatchService, event2: EventModel) -> None:
     match_data = MatchCreate(
         home_team='Roma',
