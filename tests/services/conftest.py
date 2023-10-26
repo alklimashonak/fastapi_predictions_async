@@ -69,7 +69,7 @@ def completed_match() -> MatchModel:
 
 
 @pytest.fixture
-def event1(upcoming_match: MatchModel) -> EventModel:
+def created_event(upcoming_match: MatchModel) -> EventModel:
     return EventModel(
         id=123,
         name='event1',
@@ -80,7 +80,7 @@ def event1(upcoming_match: MatchModel) -> EventModel:
 
 
 @pytest.fixture
-def event2() -> EventModel:
+def upcoming_event() -> EventModel:
     return EventModel(
         id=124,
         name='event2',
@@ -91,24 +91,24 @@ def event2() -> EventModel:
 
 
 @pytest.fixture
-def completed_event() -> EventModel:
+def ongoing_event() -> EventModel:
     return EventModel(
         id=125,
         name='event3',
-        status=EventStatus.completed,
+        status=EventStatus.ongoing,
         deadline=datetime.utcnow(),
         matches=gen_matches(event_id=125, count=5, finished=True),
     )
 
 
 @pytest.fixture
-def ready_to_finish_event() -> EventModel:
+def completed_event() -> EventModel:
     return EventModel(
         id=126,
         name='event4',
-        status=EventStatus.ongoing,
+        status=EventStatus.completed,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=125, count=5, finished=True),
+        matches=gen_matches(event_id=126, count=5, finished=True),
     )
 
 

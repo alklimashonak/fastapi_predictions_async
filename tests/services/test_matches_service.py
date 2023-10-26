@@ -17,23 +17,23 @@ def match_service(
         mock_event_repo: Callable,
         upcoming_match: MatchModel,
         completed_match: MatchModel,
-        event1: EventModel,
-        event2: EventModel,
+        created_event: EventModel,
+        upcoming_event: EventModel,
 ) -> BaseMatchService:
     repo = mock_match_repo(matches=[upcoming_match, completed_match])
-    event_repo = mock_event_repo(events=[event1, event2])
+    event_repo = mock_event_repo(events=[created_event, upcoming_event])
     yield MatchService(repo, event_repo=event_repo)
 
 
 @pytest.mark.asyncio
-async def test_can_create_match(match_service: BaseMatchService, event1: EventModel) -> None:
+async def test_can_create_match(match_service: BaseMatchService, created_event: EventModel) -> None:
     match_data = MatchCreate(
         home_team='Roma',
         away_team='Juventus',
         start_time=datetime.utcnow(),
     )
 
-    match = await match_service.create(match=match_data, event_id=event1.id)
+    match = await match_service.create(match=match_data, event_id=created_event.id)
 
     assert hasattr(match, 'id')
     assert match.home_team == match_data.home_team
@@ -55,7 +55,10 @@ async def test_create_match_for_not_existed_event(match_service: BaseMatchServic
 
 
 @pytest.mark.asyncio
-async def test_create_for_ongoing_event_raises_exc(match_service: BaseMatchService, event2: EventModel) -> None:
+async def test_create_for_upcoming_event_raises_exc(
+        match_service: BaseMatchService,
+        upcoming_event: EventModel
+) -> None:
     match_data = MatchCreate(
         home_team='Roma',
         away_team='Juventus',
@@ -63,7 +66,7 @@ async def test_create_for_ongoing_event_raises_exc(match_service: BaseMatchServi
     )
 
     with pytest.raises(HTTPException):
-        await match_service.create(match=match_data, event_id=event2.id)
+        await match_service.create(match=match_data, event_id=upcoming_event.id)
 
 
 @pytest.mark.asyncio

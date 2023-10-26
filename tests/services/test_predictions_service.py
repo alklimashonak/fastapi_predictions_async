@@ -19,14 +19,14 @@ def prediction_service(
         mock_match_repo: Callable,
         superuser: UserModel,
         active_user: UserModel,
-        event1: EventModel,
+        created_event: EventModel,
         upcoming_match: MatchModel,
         prediction1: PredictionModel,
         prediction2: PredictionModel,
 ) -> BasePredictionService:
     prediction_repo = mock_prediction_repo(
         users=[superuser, active_user],
-        events=[event1],
+        events=[created_event],
         predictions=[prediction1, prediction2]
     )
     match_repo = mock_match_repo(matches=[upcoming_match])
@@ -63,12 +63,18 @@ class TestGetMultipleByEventID:
             prediction_service: BasePredictionService,
             prediction1: PredictionModel,
             prediction2: PredictionModel,
-            event1: EventModel,
+            created_event: EventModel,
             active_user: UserModel,
             superuser: UserModel,
     ) -> None:
-        predictions1 = await prediction_service.get_multiple_by_event_id(event_id=event1.id, user_id=active_user.id)
-        predictions2 = await prediction_service.get_multiple_by_event_id(event_id=event1.id, user_id=superuser.id)
+        predictions1 = await prediction_service.get_multiple_by_event_id(
+            event_id=created_event.id,
+            user_id=active_user.id
+        )
+        predictions2 = await prediction_service.get_multiple_by_event_id(
+            event_id=created_event.id,
+            user_id=superuser.id
+        )
 
         assert len(predictions1) == 1
         assert len(predictions2) == 1

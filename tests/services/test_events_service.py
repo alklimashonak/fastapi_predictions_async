@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 from src.events.base import BaseEventService
 from src.events.models import EventStatus
-from src.events.schemas import EventCreate
+from src.events.schemas import EventCreate, EventRead
 from src.events.service import EventService
 from tests.utils import EventModel
 
@@ -14,12 +14,12 @@ from tests.utils import EventModel
 @pytest.fixture
 def event_service(
         mock_event_repo: Callable,
-        event1: EventModel,
-        event2: EventModel,
+        created_event: EventModel,
+        upcoming_event: EventModel,
+        ongoing_event: EventModel,
         completed_event: EventModel,
-        ready_to_finish_event: EventModel,
 ) -> BaseEventService:
-    repo = mock_event_repo(events=[event1, event2, completed_event, ready_to_finish_event])
+    repo = mock_event_repo(events=[created_event, upcoming_event, ongoing_event, completed_event])
     yield EventService(repo)
 
 
@@ -33,19 +33,16 @@ class TestGetMultiple:
 
 @pytest.mark.asyncio
 class TestGetByID:
-    async def test_get_existent_event_returns_event(
+    async def test_get_event_works(
             self,
             event_service: BaseEventService,
-            event1: EventModel,
+            created_event: EventModel,
     ) -> None:
-        event = await event_service.get_by_id(event_id=event1.id)
+        event = await event_service.get_by_id(event_id=created_event.id)
 
-        assert event.id == event1.id
-        assert event.name == event1.name
-        assert event.status == event1.status
-        assert len(event.matches) == len(event1.matches)
+        assert event == EventRead.from_orm(created_event)
 
-    async def test_get_not_existent_event_raises_http_exc(
+    async def test_get_event_not_found(
             self,
             event_service: BaseEventService,
     ) -> None:
@@ -55,7 +52,7 @@ class TestGetByID:
 
 @pytest.mark.asyncio
 class TestCreate:
-    async def test_create_valid_data_works(
+    async def test_create_event_works(
             self,
             event_service: BaseEventService,
     ) -> None:
@@ -84,33 +81,27 @@ class TestUpdate:
     async def test_run_ongoing_event_raises_err(
             self,
             event_service: BaseEventService,
-            event1: EventModel,
+            ongoing_event: EventModel,
     ) -> None:
-        event1.status = EventStatus.ongoing
-
         with pytest.raises(HTTPException):
-            await event_service.run(event_id=event1.id)
-
-        event1.status = EventStatus.created
+            await event_service.run(event_id=ongoing_event.id)
 
     async def test_run_without_5_matches_raises_err(
             self,
             event_service: BaseEventService,
-            event1: EventModel,
+            created_event: EventModel,
     ) -> None:
-        assert event1.status == EventStatus.created
-
-        event1.matches.pop()
+        created_event.matches.pop()
 
         with pytest.raises(HTTPException):
-            await event_service.run(event_id=event1.id)
+            await event_service.run(event_id=created_event.id)
 
     async def test_run_created_event_returns_event(
             self,
             event_service: BaseEventService,
-            event1: EventModel,
+            created_event: EventModel,
     ) -> None:
-        updated_event = await event_service.run(event_id=event1.id)
+        updated_event = await event_service.run(event_id=created_event.id)
 
         assert updated_event.status == EventStatus.ongoing
 
@@ -132,17 +123,17 @@ class TestUpdate:
     async def test_finish_event_with_not_competed_matches_raises_err(
             self,
             event_service: BaseEventService,
-            event2: EventModel,
+            upcoming_event: EventModel,
     ) -> None:
         with pytest.raises(HTTPException):
-            await event_service.finish(event_id=event2.id)
+            await event_service.finish(event_id=upcoming_event.id)
 
-    async def test_ready_to_finish_event_successfully_complete(
+    async def test_ongoing_event_successfully_complete(
             self,
             event_service: BaseEventService,
-            ready_to_finish_event: EventModel,
+            ongoing_event: EventModel,
     ) -> None:
-        updated_event = await event_service.finish(event_id=ready_to_finish_event.id)
+        updated_event = await event_service.finish(event_id=ongoing_event.id)
 
         assert updated_event.status == EventStatus.completed
 
@@ -152,9 +143,9 @@ class TestDelete:
     async def test_delete_returns_none_if_event_exists(
             self,
             event_service: BaseEventService,
-            event1: EventModel,
+            created_event: EventModel,
     ) -> None:
-        deleted_event = await event_service.delete(event_id=event1.id)
+        deleted_event = await event_service.delete(event_id=created_event.id)
 
         assert not deleted_event
 
