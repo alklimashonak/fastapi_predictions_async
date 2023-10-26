@@ -43,7 +43,7 @@ def superuser() -> UserModel:
 
 
 @pytest.fixture
-def match1() -> MatchModel:
+def upcoming_match() -> MatchModel:
     return MatchModel(
         id=123,
         event_id=123,
@@ -69,13 +69,13 @@ def completed_match() -> MatchModel:
 
 
 @pytest.fixture
-def event1(match1: MatchModel) -> EventModel:
+def event1(upcoming_match: MatchModel) -> EventModel:
     return EventModel(
         id=123,
         name='event1',
         status=EventStatus.created,
         deadline=datetime.utcnow(),
-        matches=[match1],
+        matches=gen_matches(event_id=123, count=4) + [upcoming_match],
     )
 
 
@@ -86,7 +86,7 @@ def event2() -> EventModel:
         name='event2',
         status=EventStatus.upcoming,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=125, count=5),
+        matches=gen_matches(event_id=124, count=5),
     )
 
 
@@ -113,22 +113,22 @@ def ready_to_finish_event() -> EventModel:
 
 
 @pytest.fixture
-def prediction1(active_user: UserModel, match1: MatchModel) -> PredictionModel:
+def prediction1(active_user: UserModel, upcoming_match: MatchModel) -> PredictionModel:
     return PredictionModel(
         home_goals=1,
         away_goals=0,
         user_id=active_user.id,
-        match_id=match1.id,
+        match_id=upcoming_match.id,
     )
 
 
 @pytest.fixture
-def prediction2(superuser: UserModel, match1: MatchModel) -> PredictionModel:
+def prediction2(superuser: UserModel, upcoming_match: MatchModel) -> PredictionModel:
     return PredictionModel(
         home_goals=1,
         away_goals=0,
         user_id=superuser.id,
-        match_id=match1.id,
+        match_id=upcoming_match.id,
     )
 
 

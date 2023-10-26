@@ -51,7 +51,7 @@ def test_event() -> Event:
         id=123,
         name='Event',
         deadline=datetime.now(tz=timezone.utc),
-        #status=EventStatus.created,
+        status=EventStatus.created,
     )
 
 

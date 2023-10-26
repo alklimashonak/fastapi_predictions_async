@@ -20,7 +20,7 @@ def prediction_service(
         superuser: UserModel,
         active_user: UserModel,
         event1: EventModel,
-        match1: MatchModel,
+        upcoming_match: MatchModel,
         prediction1: PredictionModel,
         prediction2: PredictionModel,
 ) -> BasePredictionService:
@@ -29,7 +29,7 @@ def prediction_service(
         events=[event1],
         predictions=[prediction1, prediction2]
     )
-    match_repo = mock_match_repo(matches=[match1])
+    match_repo = mock_match_repo(matches=[upcoming_match])
     yield PredictionService(prediction_repo, match_repo)
 
 
@@ -80,7 +80,7 @@ class TestCreate:
     async def test_create_works_correctly(
             self,
             prediction_service: BasePredictionService,
-            match1: MatchModel,
+            upcoming_match: MatchModel,
     ) -> None:
         user = UserModel(
             email='newuser@domen.com',
@@ -90,7 +90,7 @@ class TestCreate:
         prediction = PredictionCreate(
             home_goals=1,
             away_goals=0,
-            match_id=match1.id,
+            match_id=upcoming_match.id,
         )
 
         new_prediction = await prediction_service.create(prediction=prediction, user_id=user.id)
@@ -98,7 +98,7 @@ class TestCreate:
         assert new_prediction
         assert hasattr(new_prediction, 'id')
         assert new_prediction.user_id == user.id
-        assert new_prediction.match_id == match1.id
+        assert new_prediction.match_id == upcoming_match.id
         assert new_prediction.home_goals == prediction.home_goals
         assert new_prediction.away_goals == prediction.away_goals
 

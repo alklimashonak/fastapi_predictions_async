@@ -8,7 +8,7 @@ from src.events.base import BaseEventService
 from src.events.models import EventStatus
 from src.events.schemas import EventCreate
 from src.events.service import EventService
-from tests.utils import EventModel, gen_matches
+from tests.utils import EventModel
 
 
 @pytest.fixture
@@ -100,6 +100,8 @@ class TestUpdate:
     ) -> None:
         assert event1.status == EventStatus.created
 
+        event1.matches.pop()
+
         with pytest.raises(HTTPException):
             await event_service.run(event_id=event1.id)
 
@@ -108,8 +110,6 @@ class TestUpdate:
             event_service: BaseEventService,
             event1: EventModel,
     ) -> None:
-        event1.matches = gen_matches(event_id=event1.id, count=5)
-
         updated_event = await event_service.run(event_id=event1.id)
 
         assert updated_event.status == EventStatus.ongoing
