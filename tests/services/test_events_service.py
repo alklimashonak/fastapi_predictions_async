@@ -149,6 +149,9 @@ class TestDelete:
 
         assert not deleted_event
 
+        with pytest.raises(HTTPException):
+            await event_service.get_by_id(event_id=created_event.id)
+
     async def test_delete_not_existed_event_raises_exc(
             self,
             event_service: BaseEventService,

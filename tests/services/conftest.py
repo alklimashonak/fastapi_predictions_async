@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Sequence
+from typing import Sequence, Callable
 from uuid import UUID
 
 import pytest
@@ -69,13 +69,13 @@ def completed_match() -> MatchModel:
 
 
 @pytest.fixture
-def created_event(upcoming_match: MatchModel) -> EventModel:
+def created_event(upcoming_match: MatchModel, completed_match: MatchModel) -> EventModel:
     return EventModel(
         id=123,
         name='event1',
         status=EventStatus.created,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=123, count=4) + [upcoming_match],
+        matches=gen_matches(event_id=123, count=3) + [upcoming_match, completed_match],
     )
 
 
@@ -159,13 +159,16 @@ def mock_auth_repo():
                 is_active=True,
                 is_superuser=False,
             )
+
+            self.users.append(user)
+
             return user
 
     yield MockAuthRepository
 
 
 @pytest.fixture(scope='session')
-def mock_event_repo():
+def mock_event_repo() -> Callable:
     class MockEventRepository(BaseEventRepository):
         def __init__(self, events: list[EventModel]):
             self.events = events
@@ -187,7 +190,11 @@ def mock_event_repo():
                     return event
 
         async def create(self, event: EventCreate) -> EventModel:
-            return EventModel(**event.dict())
+            new_event = EventModel(**event.dict())
+
+            self.events.append(new_event)
+
+            return new_event
 
         async def update(self, event_id: int, event: EventUpdate) -> EventModel | None:
             for ev in self.events:
@@ -198,7 +205,7 @@ def mock_event_repo():
                     return ev
 
         async def delete(self, event_id: int) -> None:
-            return
+            self.events = [event for event in self.events if event.id != event_id]
 
     yield MockEventRepository
 
@@ -210,7 +217,11 @@ def mock_match_repo():
             self.matches = matches
 
         async def create(self, match: MatchCreate, event_id: int) -> MatchModel:
-            return MatchModel(**match.dict(), event_id=event_id)
+            new_match = MatchModel(**match.dict(), event_id=event_id)
+
+            self.matches.append(new_match)
+
+            return new_match
 
         async def get_by_id(self, match_id: int) -> MatchModel | None:
             for match in self.matches:
@@ -229,7 +240,7 @@ def mock_match_repo():
                     return mat
 
         async def delete(self, match_id: int) -> None:
-            return
+            self.matches = [match for match in self.matches if match.id != match_id]
 
     yield MockMatchRepository
 
@@ -260,7 +271,11 @@ def mock_prediction_repo():
                     return prediction
 
         async def create(self, prediction: PredictionCreate, user_id: UUID) -> PredictionModel:
-            return PredictionModel(**prediction.dict(), user_id=user_id)
+            new_prediction = PredictionModel(**prediction.dict(), user_id=user_id)
+
+            self.predictions.append(new_prediction)
+
+            return new_prediction
 
         async def update(self, prediction_id: int, prediction: PredictionUpdate) -> PredictionModel | None:
             prediction_to_update = await self.get_by_id(prediction_id=prediction_id)
@@ -268,13 +283,10 @@ def mock_prediction_repo():
             if not prediction_to_update:
                 return
 
-            return PredictionModel(
-                id=prediction_id,
-                home_goals=prediction.home_goals,
-                away_goals=prediction.away_goals,
-                match_id=prediction_to_update.match_id,
-                user_id=prediction_to_update.user_id,
-            )
+            prediction_to_update.home_goals = prediction.home_goals
+            prediction_to_update.away_goals = prediction.away_goals
+
+            return prediction_to_update
 
         async def exists_in_db(self, user_id: UUID, match_id: int) -> bool:
             for prediction in self.predictions:
