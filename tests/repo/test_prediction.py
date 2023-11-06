@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from src.auth.models import User
 from src.events.models import Event
 from src.matches.models import Match
+from src.matches.schemas import MatchRead
 from src.predictions.base import BasePredictionRepository
 from src.predictions.models import Prediction
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
@@ -79,3 +80,43 @@ async def test_update_prediction(prediction_repo: BasePredictionRepository, test
     assert updated_prediction.home_goals == data.home_goals
     assert updated_prediction.away_goals == data.away_goals
     assert updated_prediction.user_id == test_prediction.user_id
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'home_goals, away_goals, points',
+    [
+        (2, 2, 3),
+        (0, 0, 1),
+        (3, 3, 1),
+        (1, 1, 1),
+        (2, 0, 0),
+        (0, 2, 0),
+    ]
+)
+async def test_update_predictions_points(
+        prediction_repo: BasePredictionRepository,
+        test_prediction: Prediction,
+        test_match: Match,
+        home_goals: int,
+        away_goals: int,
+        points: int,
+) -> None:
+    assert test_prediction.points is None
+
+    match = MatchRead(
+        id=test_prediction.match_id,
+        home_team=test_match.home_team,
+        away_team=test_match.away_team,
+        home_goals=home_goals,
+        away_goals=away_goals,
+        start_time=test_match.start_time,
+        event_id=test_match.event_id,
+        status=test_match.status,
+    )
+
+    await prediction_repo.update_points_for_match(match=match)
+
+    updated_repo = await prediction_repo.get_by_id(prediction_id=test_prediction.id)
+
+    assert updated_repo.points == points

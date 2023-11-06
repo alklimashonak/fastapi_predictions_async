@@ -9,6 +9,12 @@ from src.db.database import Base
 from src.predictions.models import Prediction
 
 
+class MatchResult(enum.IntEnum):
+    draw = 0
+    home_win = 1
+    away_win = 2
+
+
 class MatchStatus(enum.IntEnum):
     upcoming = 0
     ongoing = 1
@@ -29,3 +35,13 @@ class Match(Base):
     event_id: Mapped[int] = mapped_column(Integer, ForeignKey('events.id', ondelete='CASCADE'))
 
     predictions: Mapped[list['Prediction']] = relationship('Prediction', backref='match')
+
+    def result(self) -> MatchResult | None:
+        if not self.home_goals or not self.away_goals:
+            return None
+        elif self.home_goals == self.away_goals:
+            return MatchResult.draw
+        elif self.home_goals > self.away_goals:
+            return MatchResult.home_win
+        elif self.away_goals > self.home_goals:
+            return MatchResult.away_win

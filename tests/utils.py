@@ -49,6 +49,7 @@ class PredictionModel:
     match_id: int
     user_id: UUID
     id: int = dataclasses.field(default_factory=lambda counter=count(): next(counter))
+    points: int | None = None
 
 
 teams = ['Real Madrid', 'Barcelona', 'Liverpool', 'Arsenal', 'Juventus']

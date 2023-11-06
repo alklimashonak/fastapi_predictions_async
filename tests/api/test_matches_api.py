@@ -11,6 +11,7 @@ from starlette import status
 from src.auth.dependencies import get_current_user
 from src.matches.dependencies import get_match_service
 from src.matches.router import router as match_router
+from src.predictions.dependencies import get_prediction_service
 from tests.api.conftest import UserModel
 from tests.utils import EventModel, MatchModel
 
@@ -30,10 +31,11 @@ def app_factory():
 
 @pytest_asyncio.fixture
 async def async_client(
-        get_test_client, app_factory, fake_get_current_user, fake_get_match_service
+        get_test_client, app_factory, fake_get_current_user, fake_get_match_service, fake_get_prediction_service
 ) -> AsyncGenerator[httpx.AsyncClient, None]:
     app = app_factory()
     app.dependency_overrides[get_match_service] = fake_get_match_service
+    app.dependency_overrides[get_prediction_service] = fake_get_prediction_service
     app.dependency_overrides[get_current_user] = fake_get_current_user
 
     async for client in get_test_client(app):
@@ -148,8 +150,9 @@ class TestFinishMatch:
 
     async def test_match_not_found(self, async_client: AsyncClient, superuser: UserModel) -> None:
         response = await async_client.patch(
-            '/matches/99999/finish?home_goals=4&away_goals=4',
-            headers={'Authorization': superuser.email}
+            '/matches/99999/finish',
+            params={'home_goals': 4, 'away_goals': 4},
+            headers={'Authorization': superuser.email},
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -159,10 +162,11 @@ class TestFinishMatch:
             self,
             async_client: AsyncClient,
             superuser: UserModel,
-            completed_match: MatchModel
+            completed_match: MatchModel,
     ) -> None:
         response = await async_client.patch(
-            f'/matches/{completed_match.id}/finish?home_goals=4&away_goals=4',
+            f'/matches/{completed_match.id}/finish',
+            params={'home_goals': 4, 'away_goals': 4},
             headers={'Authorization': superuser.email}
         )
 
@@ -176,8 +180,9 @@ class TestFinishMatch:
             match1: MatchModel,
     ) -> None:
         response = await async_client.patch(
-            f'/matches/{match1.id}/finish?home_goals=4&away_goals=4',
-            headers={'Authorization': superuser.email}
+            f'/matches/{match1.id}/finish',
+            params={'home_goals': 4, 'away_goals': 4},
+            headers={'Authorization': superuser.email},
         )
 
         assert response.status_code == status.HTTP_200_OK

@@ -13,7 +13,7 @@ from src.events.models import EventStatus
 from src.events.schemas import EventCreate, EventUpdate
 from src.matches.base import BaseMatchRepository
 from src.matches.models import MatchStatus
-from src.matches.schemas import MatchCreate, MatchUpdate
+from src.matches.schemas import MatchCreate, MatchUpdate, MatchRead
 from src.predictions.base import BasePredictionRepository
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 from tests.utils import MatchModel, EventModel, UserModel, PredictionModel, user_password, superuser_password, \
@@ -129,6 +129,16 @@ def prediction2(superuser: UserModel, upcoming_match: MatchModel) -> PredictionM
         away_goals=0,
         user_id=superuser.id,
         match_id=upcoming_match.id,
+    )
+
+
+@pytest.fixture
+def prediction3(active_user: UserModel, completed_match: MatchModel) -> PredictionModel:
+    return PredictionModel(
+        home_goals=completed_match.home_goals,
+        away_goals=completed_match.away_goals,
+        match_id=completed_match.id,
+        user_id=active_user.id,
     )
 
 
@@ -293,5 +303,19 @@ def mock_prediction_repo():
                 if prediction.user_id == user_id and prediction.match_id == match_id:
                     return True
             return False
+
+        async def update_points_for_match(self, match: MatchRead) -> None:
+            for prediction in self.predictions:
+                if prediction.match_id == match.id:
+                    if prediction.home_goals == match.home_goals and prediction.away_goals == match.away_goals:
+                        prediction.points = 3
+                    elif prediction.home_goals - prediction.away_goals < 0 and match.home_goals - match.away_goals < 0:
+                        prediction.points = 1
+                    elif prediction.home_goals - prediction.away_goals < 0 and match.home_goals - match.away_goals < 0:
+                        prediction.points = 1
+                    elif prediction.home_goals - prediction.away_goals == 0 and match.home_goals - match.away_goals == 0:
+                        prediction.points = 1
+                    else:
+                        prediction.points = 0
 
     yield MockPredictionRepository

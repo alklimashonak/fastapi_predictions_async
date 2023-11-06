@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from src.core.security import get_password_hash
+from src.matches.schemas import MatchRead
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 from src.predictions.service import PredictionService
@@ -23,11 +24,12 @@ def prediction_service(
         upcoming_match: MatchModel,
         prediction1: PredictionModel,
         prediction2: PredictionModel,
+        prediction3: PredictionModel,
 ) -> BasePredictionService:
     prediction_repo = mock_prediction_repo(
         users=[superuser, active_user],
         events=[created_event],
-        predictions=[prediction1, prediction2]
+        predictions=[prediction1, prediction2, prediction3]
     )
     match_repo = mock_match_repo(matches=[upcoming_match])
     yield PredictionService(prediction_repo, match_repo)
@@ -76,7 +78,7 @@ class TestGetMultipleByEventID:
             user_id=superuser.id
         )
 
-        assert len(predictions1) == 1
+        assert len(predictions1) == 2
         assert len(predictions2) == 1
         assert predictions1[0].id != predictions2[0].id
 
@@ -186,3 +188,27 @@ class TestUpdate:
             await prediction_service.update(prediction_id=prediction2.id, prediction=data, user_id=active_user.id)
 
         assert prediction2.user_id != active_user.id
+
+    async def test_update_prediction_points_for_not_completed_match_raises_exc(
+            self,
+            prediction_service: BasePredictionService,
+            prediction1: PredictionModel,
+            upcoming_match: MatchModel,
+    ) -> None:
+        match = MatchRead.from_orm(upcoming_match)
+        with pytest.raises(HTTPException):
+            await prediction_service.update_points_for_match(match=match)
+
+    async def test_update_prediction_points_works(
+            self,
+            prediction_service: BasePredictionService,
+            prediction3: PredictionModel,
+            completed_match: MatchModel,
+    ) -> None:
+        assert prediction3.points is None
+
+        match = MatchRead.from_orm(completed_match)
+
+        await prediction_service.update_points_for_match(match=match)
+
+        assert prediction3.points == 3

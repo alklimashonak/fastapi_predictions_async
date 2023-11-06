@@ -17,7 +17,7 @@ from src.events.models import EventStatus
 from src.events.schemas import EventCreate
 from src.matches.base import BaseMatchService
 from src.matches.models import MatchStatus
-from src.matches.schemas import MatchCreate
+from src.matches.schemas import MatchCreate, MatchRead
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 from tests.utils import gen_matches, MatchModel, EventModel, UserModel, PredictionModel, user_password, \
@@ -318,6 +318,9 @@ def fake_get_prediction_service(prediction1: PredictionModel, prediction2: Predi
                     match_id=prediction_to_update.match_id,
                     user_id=prediction_to_update.user_id,
                 )
+
+            async def update_points_for_match(self, match: MatchRead) -> None:
+                pass
 
         yield MockPredictionService(predictions=[prediction1, prediction2])
 

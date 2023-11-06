@@ -1,6 +1,7 @@
 from typing import Sequence
 from uuid import UUID
 
+from src.matches.schemas import MatchRead
 from src.predictions.models import Prediction
 from src.predictions.schemas import PredictionCreate, PredictionUpdate, PredictionRead
 
@@ -21,6 +22,9 @@ class BasePredictionRepository:
     async def exists_in_db(self, user_id: UUID, match_id: int) -> bool:
         raise NotImplementedError
 
+    async def update_points_for_match(self, match: MatchRead) -> None:
+        raise NotImplementedError
+
 
 class BasePredictionService:
     async def get_by_id(self, prediction_id: int) -> PredictionRead:
@@ -33,4 +37,7 @@ class BasePredictionService:
         raise NotImplementedError
 
     async def update(self, prediction_id: int, prediction: PredictionUpdate, user_id: UUID) -> PredictionRead:
+        raise NotImplementedError
+
+    async def update_points_for_match(self, match: MatchRead) -> None:
         raise NotImplementedError
