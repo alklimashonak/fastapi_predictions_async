@@ -8,13 +8,14 @@ from src.matches.base import BaseMatchService
 from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate
 from src.matches.service import MatchService
-from tests.utils import MatchModel, EventModel
+from tests.utils import MatchModel, EventModel, PredictionModel
 
 
 @pytest.fixture
 def match_service(
         mock_match_repo: Callable,
         mock_event_repo: Callable,
+        mock_prediction_repo: Callable,
         upcoming_match: MatchModel,
         completed_match: MatchModel,
         created_event: EventModel,
@@ -22,7 +23,8 @@ def match_service(
 ) -> BaseMatchService:
     repo = mock_match_repo(matches=[upcoming_match, completed_match])
     event_repo = mock_event_repo(events=[created_event, upcoming_event])
-    yield MatchService(repo, event_repo=event_repo)
+    prediction_repo = mock_prediction_repo(predictions=[], users=[], events=[created_event, upcoming_event])
+    yield MatchService(repo, event_repo=event_repo, prediction_repo=prediction_repo)
 
 
 @pytest.mark.asyncio

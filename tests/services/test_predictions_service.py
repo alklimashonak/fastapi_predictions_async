@@ -5,7 +5,6 @@ import pytest
 from fastapi import HTTPException
 
 from src.core.security import get_password_hash
-from src.matches.schemas import MatchRead
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
 from src.predictions.service import PredictionService
@@ -188,27 +187,3 @@ class TestUpdate:
             await prediction_service.update(prediction_id=prediction2.id, prediction=data, user_id=active_user.id)
 
         assert prediction2.user_id != active_user.id
-
-    async def test_update_prediction_points_for_not_completed_match_raises_exc(
-            self,
-            prediction_service: BasePredictionService,
-            prediction1: PredictionModel,
-            upcoming_match: MatchModel,
-    ) -> None:
-        match = MatchRead.from_orm(upcoming_match)
-        with pytest.raises(HTTPException):
-            await prediction_service.update_points_for_match(match=match)
-
-    async def test_update_prediction_points_works(
-            self,
-            prediction_service: BasePredictionService,
-            prediction3: PredictionModel,
-            completed_match: MatchModel,
-    ) -> None:
-        assert prediction3.points is None
-
-        match = MatchRead.from_orm(completed_match)
-
-        await prediction_service.update_points_for_match(match=match)
-
-        assert prediction3.points == 3

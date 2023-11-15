@@ -6,8 +6,6 @@ from fastapi import HTTPException
 from starlette import status
 
 from src.matches.base import BaseMatchRepository
-from src.matches.models import MatchStatus
-from src.matches.schemas import MatchRead
 from src.predictions.base import BasePredictionService, BasePredictionRepository
 from src.predictions.schemas import PredictionCreate, PredictionUpdate, PredictionRead
 
@@ -59,9 +57,3 @@ class PredictionService(BasePredictionService):
         predict = await self.repo.update(prediction_id=prediction_id, prediction=prediction)
 
         return PredictionRead.from_orm(predict)
-
-    async def update_points_for_match(self, match: MatchRead) -> None:
-        if match.status != MatchStatus.completed:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail='Updating points for not completed match is impossible')
-        await self.repo.update_points_for_match(match=match)

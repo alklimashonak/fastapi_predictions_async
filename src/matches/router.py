@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.params import Query
 from starlette import status
 
@@ -6,8 +6,6 @@ from src.auth.dependencies import get_current_superuser
 from src.matches.base import BaseMatchService
 from src.matches.dependencies import get_match_service
 from src.matches.schemas import MatchRead, MatchCreate
-from src.predictions.base import BasePredictionService
-from src.predictions.dependencies import get_prediction_service
 
 router = APIRouter()
 
@@ -48,11 +46,5 @@ async def finish_match(
         home_goals: int = Query(ge=0, le=9),
         away_goals: int = Query(ge=0, le=9),
         match_service: BaseMatchService = Depends(get_match_service),
-        prediction_service: BasePredictionService = Depends(get_prediction_service),
 ):
-    try:
-        match = await match_service.finish(match_id=match_id, home_goals=home_goals, away_goals=away_goals)
-        await prediction_service.update_points_for_match(match=match)
-    except HTTPException as exc:
-        raise exc
-    return match
+    return await match_service.finish(match_id=match_id, home_goals=home_goals, away_goals=away_goals)

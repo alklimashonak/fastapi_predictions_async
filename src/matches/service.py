@@ -7,12 +7,19 @@ from src.events.schemas import MatchCreate
 from src.matches.base import BaseMatchService, BaseMatchRepository
 from src.matches.models import MatchStatus
 from src.matches.schemas import MatchRead, MatchUpdate
+from src.predictions.base import BasePredictionRepository
 
 
 class MatchService(BaseMatchService):
-    def __init__(self, repo: BaseMatchRepository, event_repo: BaseEventRepository):
+    def __init__(
+            self,
+            repo: BaseMatchRepository,
+            event_repo: BaseEventRepository,
+            prediction_repo: BasePredictionRepository,
+    ):
         self.repo = repo
         self.event_repo = event_repo
+        self.prediction_repo = prediction_repo
 
     async def create(self, match: MatchCreate, event_id: int) -> MatchRead:
         event = await self.event_repo.get_by_id(event_id=event_id)
@@ -31,7 +38,9 @@ class MatchService(BaseMatchService):
 
         new_match = await self.repo.create(match=match, event_id=event_id)
 
-        return MatchRead.from_orm(new_match)
+        new_match = MatchRead.from_orm(new_match)
+
+        return new_match
 
     async def finish(self, match_id, home_goals: int, away_goals: int) -> MatchRead:
         match = await self.repo.get_by_id(match_id=match_id)
@@ -51,7 +60,11 @@ class MatchService(BaseMatchService):
             status=MatchStatus.completed,
         )
 
-        return await self.repo.update(match_id=match_id, match=new_data)
+        updated_match = await self.repo.update(match_id=match_id, match=new_data)
+
+        await self.prediction_repo.update_points_for_match(match=updated_match)
+
+        return updated_match
 
     async def delete(self, match_id: int) -> None:
         match = await self.repo.get_by_id(match_id=match_id)

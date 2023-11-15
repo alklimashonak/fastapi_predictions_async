@@ -63,6 +63,7 @@ class PredictionRepository(BasePredictionRepository):
         if match.home_goals - match.away_goals > 0:
             stmt2 = update(Prediction) \
                 .where(
+                Prediction.points.is_(None) &
                 Prediction.home_goals.is_not(None) &
                 Prediction.away_goals.is_not(None) &
                 (Prediction.match_id == match.id) &
@@ -72,6 +73,7 @@ class PredictionRepository(BasePredictionRepository):
         elif match.home_goals - match.away_goals < 0:
             stmt2 = update(Prediction) \
                 .where(
+                Prediction.points.is_(None) &
                 Prediction.home_goals.is_not(None) &
                 Prediction.away_goals.is_not(None) &
                 (Prediction.match_id == match.id) &

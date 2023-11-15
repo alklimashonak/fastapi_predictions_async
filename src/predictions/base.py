@@ -38,6 +38,3 @@ class BasePredictionService:
 
     async def update(self, prediction_id: int, prediction: PredictionUpdate, user_id: UUID) -> PredictionRead:
         raise NotImplementedError
-
-    async def update_points_for_match(self, match: MatchRead) -> None:
-        raise NotImplementedError
