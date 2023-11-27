@@ -8,7 +8,7 @@ from src.matches.base import BaseMatchService
 from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate
 from src.matches.service import MatchService
-from tests.utils import MatchModel, EventModel, PredictionModel
+from tests.utils import MatchModel, EventModel
 
 
 @pytest.fixture

@@ -1,6 +1,4 @@
-from fastapi import HTTPException
-from starlette import status
-
+from src import exceptions
 from src.events.base import BaseEventRepository
 from src.events.models import EventStatus
 from src.events.schemas import MatchCreate
@@ -25,16 +23,10 @@ class MatchService(BaseMatchService):
         event = await self.event_repo.get_by_id(event_id=event_id)
 
         if not event:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Event not found'
-            )
+            raise exceptions.EventNotFound
 
         if event.status != EventStatus.created:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Only events with status "Created" can add a match'
-            )
+            raise exceptions.EventIsNotCreated
 
         new_match = await self.repo.create(match=match, event_id=event_id)
 
@@ -46,10 +38,10 @@ class MatchService(BaseMatchService):
         match = await self.repo.get_by_id(match_id=match_id)
 
         if not match:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
+            raise exceptions.MatchNotFound
 
-        if match.status > MatchStatus.upcoming:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Match is already finished')
+        if match.status == MatchStatus.completed:
+            raise exceptions.MatchAlreadyIsCompleted
 
         new_data = MatchUpdate(
             home_team=match.home_team,
@@ -64,12 +56,12 @@ class MatchService(BaseMatchService):
 
         await self.prediction_repo.update_points_for_match(match=updated_match)
 
-        return updated_match
+        return MatchRead.from_orm(updated_match)
 
     async def delete(self, match_id: int) -> None:
         match = await self.repo.get_by_id(match_id=match_id)
 
         if not match:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
+            raise exceptions.MatchNotFound
 
         return await self.repo.delete(match_id=match_id)

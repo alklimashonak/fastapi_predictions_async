@@ -4,7 +4,6 @@ from uuid import UUID
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from sqlalchemy.sql.operators import and_, or_
 
 from src.events.models import Match
 from src.matches.schemas import MatchRead

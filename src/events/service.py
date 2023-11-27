@@ -1,8 +1,6 @@
 from typing import Sequence
 
-from fastapi import HTTPException
-from starlette import status
-
+from src import exceptions
 from src.events.base import BaseEventService, BaseEventRepository
 from src.events.models import EventStatus
 from src.events.schemas import EventCreate, EventRead, EventUpdate
@@ -21,7 +19,8 @@ class EventService(BaseEventService):
         event = await self.repo.get_by_id(event_id=event_id)
 
         if not event:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
+            raise exceptions.EventNotFound
+
         return EventRead.from_orm(event)
 
     async def create(self, event: EventCreate) -> EventRead:
@@ -33,13 +32,28 @@ class EventService(BaseEventService):
         event = await self.repo.get_by_id(event_id=event_id)
 
         if not event:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
+            raise exceptions.EventNotFound
 
-        if event.status > EventStatus.upcoming:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='You can run only not started events')
+        if event.status > EventStatus.created:
+            raise exceptions.EventAlreadyIsRunning
 
         if len(event.matches) != 5:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
+            raise exceptions.TooFewMatches
+
+        event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.upcoming)
+
+        updated_event = await self.repo.update(event_id=event_id, event=event)
+
+        return EventRead.from_orm(updated_event)
+
+    async def start(self, event_id: int) -> EventRead:
+        event = await self.repo.get_by_id(event_id=event_id)
+
+        if not event:
+            raise exceptions.EventNotFound
+
+        if event.status > EventStatus.upcoming:
+            raise exceptions.EventAlreadyIsStarted
 
         event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.ongoing)
 
@@ -51,14 +65,14 @@ class EventService(BaseEventService):
         event = await self.repo.get_by_id(event_id=event_id)
 
         if not event:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
+            raise exceptions.EventNotFound
 
         if event.status != EventStatus.ongoing:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event should have ongoing status')
+            raise exceptions.EventIsNotOngoing
 
         for match in event.matches:
             if match.status < MatchStatus.completed:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='All matches should be finished')
+                raise exceptions.MatchesAreNotFinished
 
         data = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.completed)
 
@@ -70,6 +84,6 @@ class EventService(BaseEventService):
         event = await self.repo.get_by_id(event_id=event_id)
 
         if not event:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
+            raise exceptions.EventNotFound
 
         return await self.repo.delete(event_id=event_id)

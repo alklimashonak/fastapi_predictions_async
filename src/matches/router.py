@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Query
 from starlette import status
 
+from src import exceptions
 from src.auth.dependencies import get_current_superuser
 from src.matches.base import BaseMatchService
 from src.matches.dependencies import get_match_service
@@ -21,7 +22,16 @@ async def create_match(
         match: MatchCreate,
         match_service: BaseMatchService = Depends(get_match_service),
 ):
-    return await match_service.create(match=match, event_id=event_id)
+    try:
+        match = await match_service.create(match=match, event_id=event_id)
+    except exceptions.EventNotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
+    except exceptions.EventIsNotCreated:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Only events with status "Created" can add a match',
+        )
+    return match
 
 
 @router.delete(
@@ -33,7 +43,10 @@ async def delete_match(
         match_id: int,
         match_service: BaseMatchService = Depends(get_match_service),
 ):
-    return await match_service.delete(match_id=match_id)
+    try:
+        await match_service.delete(match_id=match_id)
+    except exceptions.MatchNotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
 
 
 @router.patch(
@@ -47,4 +60,10 @@ async def finish_match(
         away_goals: int = Query(ge=0, le=9),
         match_service: BaseMatchService = Depends(get_match_service),
 ):
-    return await match_service.finish(match_id=match_id, home_goals=home_goals, away_goals=away_goals)
+    try:
+        match = await match_service.finish(match_id=match_id, home_goals=home_goals, away_goals=away_goals)
+    except exceptions.MatchNotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
+    except exceptions.MatchAlreadyIsCompleted:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Match is already completed')
+    return match

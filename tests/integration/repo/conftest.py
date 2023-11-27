@@ -90,7 +90,7 @@ def test_prediction(test_user: User, test_match: Match) -> Prediction:
 
 @pytest.fixture(scope='session', autouse=True)
 def run_migrations() -> None:
-    root_dir = pathlib.Path(__file__).absolute().parent.parent.parent
+    root_dir = pathlib.Path(__file__).absolute().parent.parent.parent.parent
     ini_file = root_dir.joinpath("alembic.ini").__str__()
     alembic_directory = root_dir.joinpath("alembic").__str__()
     config = Config(ini_file)
