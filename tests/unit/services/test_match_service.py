@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-from fastapi import HTTPException
 
 from src import exceptions
 from src.events.base import BaseEventRepository
@@ -37,7 +36,7 @@ class TestCreate:
         with pytest.raises(exceptions.EventNotFound):
             await match_service.create(match=match_data, event_id=987)
 
-    async def test_event_has_not_created_status(
+    async def test_event_already_is_running(
             self,
             match_service: BaseMatchService,
             upcoming_event: EventModel,
@@ -49,10 +48,10 @@ class TestCreate:
             start_time=datetime.utcnow(),
         )
 
-        with pytest.raises(exceptions.EventIsNotCreated):
+        with pytest.raises(exceptions.EventAlreadyIsRunning):
             await match_service.create(match=match_data, event_id=upcoming_event.id)
 
-        with pytest.raises(exceptions.EventIsNotCreated):
+        with pytest.raises(exceptions.EventAlreadyIsRunning):
             await match_service.create(match=match_data, event_id=ongoing_event.id)
 
     async def test_match_successfully_created(

@@ -26,10 +26,6 @@ class TooFewMatches(Exception):
     pass
 
 
-class EventIsNotCreated(Exception):
-    pass
-
-
 class EventIsNotOngoing(Exception):
     pass
 

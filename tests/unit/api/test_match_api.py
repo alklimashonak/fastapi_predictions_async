@@ -86,7 +86,7 @@ class TestCreateMatch:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json()['detail'] == 'Event not found'
 
-    async def test_event_has_not_created_status(
+    async def test_event_already_is_running(
             self, async_client: AsyncClient, superuser: UserModel, upcoming_event: EventModel
     ) -> None:
         response = await async_client.post(
@@ -96,7 +96,7 @@ class TestCreateMatch:
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.json()['detail'] == 'Only events with status "Created" can add a match'
+        assert response.json()['detail'] == 'Event already is running'
 
     @pytest.mark.skip
     async def test_too_short_team_name_raises_422(self, async_client: AsyncClient,

@@ -350,8 +350,8 @@ def fake_get_match_service(
                 if event is None:
                     raise exceptions.EventNotFound
 
-                if event.status != EventStatus.created:
-                    raise exceptions.EventIsNotCreated
+                if event.status > EventStatus.created:
+                    raise exceptions.EventAlreadyIsRunning
 
                 new_match = MatchModel(**match.dict(), event_id=event_id)
                 return MatchRead.from_orm(new_match)

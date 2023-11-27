@@ -25,8 +25,8 @@ class MatchService(BaseMatchService):
         if not event:
             raise exceptions.EventNotFound
 
-        if event.status != EventStatus.created:
-            raise exceptions.EventIsNotCreated
+        if event.status > EventStatus.created:
+            raise exceptions.EventAlreadyIsRunning
 
         new_match = await self.repo.create(match=match, event_id=event_id)
 
