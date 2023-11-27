@@ -160,6 +160,18 @@ class TestFinishMatch:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json()['detail'] == 'Match not found'
 
+    async def test_match_has_not_started(
+            self, async_client: AsyncClient, upcoming_match: MatchModel, superuser: UserModel
+    ) -> None:
+        response = await async_client.patch(
+            f'/matches/{upcoming_match.id}/finish',
+            params={'home_goals': 4, 'away_goals': 4},
+            headers={'Authorization': superuser.email},
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()['detail'] == 'Match has not started yet'
+
     async def test_match_already_is_completed(
             self, async_client: AsyncClient, completed_match: MatchModel, superuser: UserModel
     ) -> None:

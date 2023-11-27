@@ -86,7 +86,15 @@ class TestFinishMatch:
         with pytest.raises(exceptions.MatchNotFound):
             await match_service.finish(match_id=987, home_goals=1, away_goals=1)
 
-    async def test_match_already_completed(
+    async def test_finish_upcoming_match(
+            self,
+            match_service: BaseMatchService,
+            upcoming_match: MatchModel,
+    ) -> None:
+        with pytest.raises(exceptions.MatchHasNotStarted):
+            await match_service.finish(match_id=upcoming_match.id, home_goals=1, away_goals=1)
+
+    async def test_finish_completed_match(
             self,
             match_service: BaseMatchService,
             completed_match: MatchModel,
@@ -94,7 +102,7 @@ class TestFinishMatch:
         with pytest.raises(exceptions.MatchAlreadyIsCompleted):
             await match_service.finish(match_id=completed_match.id, home_goals=1, away_goals=1)
 
-    async def test_ongoing_match_is_able_to_finish(
+    async def test_finish_ongoing_match(
             self,
             match_service: BaseMatchService,
             ongoing_match: MatchModel,

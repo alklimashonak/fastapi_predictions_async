@@ -38,6 +38,10 @@ class MatchNotFound(Exception):
     pass
 
 
+class MatchHasNotStarted(Exception):
+    pass
+
+
 class MatchAlreadyIsRunning(Exception):
     pass
 
