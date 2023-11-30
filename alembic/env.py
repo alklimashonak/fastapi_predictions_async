@@ -13,7 +13,7 @@ from src.predictions.models import Prediction # noqa
 from src.core.config import settings
 from src.db.database import Base
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('alembic')
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

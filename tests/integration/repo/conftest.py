@@ -1,7 +1,8 @@
-import logging
+import logging.config
 import pathlib
 import uuid
 from datetime import datetime, timezone
+from os import path
 
 import pytest
 import pytest_asyncio
@@ -25,7 +26,10 @@ from src.predictions.base import BasePredictionRepository
 from src.predictions.models import Prediction
 from src.predictions.repo import PredictionRepository
 
-logger = logging.getLogger()
+log_file_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))), 'logging.ini')
+logging.config.fileConfig(log_file_path, disable_existing_loggers=False)
+
+logger = logging.getLogger('tests')
 
 settings.TESTING = True
 
@@ -93,14 +97,14 @@ def run_migrations() -> None:
     root_dir = pathlib.Path(__file__).absolute().parent.parent.parent.parent
     ini_file = root_dir.joinpath("alembic.ini").__str__()
     alembic_directory = root_dir.joinpath("alembic").__str__()
-    config = Config(ini_file)
-    config.set_main_option("script_location", alembic_directory)
-    logger.info('RUN MIGRATIONS')
-    command.downgrade(config, 'base')
-    command.upgrade(config, "head")
+    alembic_config = Config(ini_file)
+    alembic_config.set_main_option("script_location", alembic_directory)
+    logger.warning('RUN MIGRATIONS')
+    command.downgrade(alembic_config, 'base')
+    command.upgrade(alembic_config, "head")
     yield
-    logger.info('DROP MIGRATIONS')
-    command.downgrade(config, 'base')
+    logger.warning('DROP MIGRATIONS')
+    command.downgrade(alembic_config, 'base')
 
 
 @pytest_asyncio.fixture(scope='session', autouse=True)
@@ -118,8 +122,6 @@ async def fill_db(
         session.add(test_match)
         session.add(test_prediction)
         session.add(another_match)
-        logger.info('CREATE TEST USER')
-        logger.info('CREATE TEST EVENT')
         return await session.commit()
 
 
