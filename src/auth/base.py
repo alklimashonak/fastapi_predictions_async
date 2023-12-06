@@ -26,6 +26,9 @@ class BaseAuthService:
     async def get_by_id(self, user_id: UUID) -> UserRead:
         raise NotImplementedError
 
+    async def get_by_email(self, email: str) -> UserRead:
+        raise NotImplementedError
+
     async def register(self, new_user: UserCreate) -> UserRead:
         raise NotImplementedError
 

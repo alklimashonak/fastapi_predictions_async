@@ -64,8 +64,6 @@ async def finish_match(
         match = await match_service.finish(match_id=match_id, home_goals=home_goals, away_goals=away_goals)
     except exceptions.MatchNotFound:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
-    except exceptions.MatchHasNotStarted:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Match has not started yet')
     except exceptions.MatchAlreadyIsCompleted:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Match is already completed')
     return match

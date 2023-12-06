@@ -245,6 +245,14 @@ def mock_match_repo(
                 ongoing_match.home_goals = match.home_goals
                 ongoing_match.away_goals = match.away_goals
                 return ongoing_match
+            if match_id == upcoming_match.id:
+                upcoming_match.home_team = match.home_team
+                upcoming_match.away_team = match.away_team
+                upcoming_match.start_time = match.start_time
+                upcoming_match.status = match.status
+                upcoming_match.home_goals = match.home_goals
+                upcoming_match.away_goals = match.away_goals
+                return upcoming_match
 
         async def delete(self, match_id: int) -> None:
             return None

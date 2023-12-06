@@ -91,8 +91,12 @@ class TestFinishMatch:
             match_service: BaseMatchService,
             upcoming_match: MatchModel,
     ) -> None:
-        with pytest.raises(exceptions.MatchHasNotStarted):
-            await match_service.finish(match_id=upcoming_match.id, home_goals=1, away_goals=1)
+        match = await match_service.finish(match_id=upcoming_match.id, home_goals=1, away_goals=1)
+
+        assert type(match) == MatchRead
+        assert match.status == MatchStatus.completed
+        assert match.home_goals == 1
+        assert match.away_goals == 1
 
     async def test_finish_completed_match(
             self,

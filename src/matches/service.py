@@ -40,9 +40,6 @@ class MatchService(BaseMatchService):
         if not match:
             raise exceptions.MatchNotFound
 
-        if match.status == MatchStatus.upcoming:
-            raise exceptions.MatchHasNotStarted
-
         if match.status == MatchStatus.completed:
             raise exceptions.MatchAlreadyIsCompleted
 

@@ -3,6 +3,7 @@ from typing import Sequence
 from uuid import UUID
 
 from fastapi import HTTPException
+from pydantic import EmailStr
 from starlette import status
 
 from src import exceptions
@@ -24,6 +25,13 @@ class AuthService(BaseAuthService):
 
     async def get_by_id(self, user_id: UUID) -> UserRead:
         user = await self.repo.get_by_id(user_id=user_id)
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        return UserRead.from_orm(user)
+
+    async def get_by_email(self, email: str) -> UserRead:
+        user = await self.repo.get_by_email(email=email)
 
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
