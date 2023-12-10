@@ -86,7 +86,7 @@ class EventService(BaseEventService):
             raise exceptions.UnexpectedEventStatus
 
         for match in event.matches:
-            if match.status < MatchStatus.completed:
+            if match.status != MatchStatus.completed:
                 raise exceptions.MatchesAreNotFinished
 
         data = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.completed)
