@@ -18,15 +18,19 @@ class EventAlreadyIsRunning(Exception):
     pass
 
 
-class EventAlreadyIsStarted(Exception):
-    pass
-
-
 class TooFewMatches(Exception):
     pass
 
 
+class EventIsNotUpcoming(Exception):
+    pass
+
+
 class EventIsNotOngoing(Exception):
+    pass
+
+
+class EventIsNotClosed(Exception):
     pass
 
 

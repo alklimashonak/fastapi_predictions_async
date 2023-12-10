@@ -52,10 +52,25 @@ class EventService(BaseEventService):
         if not event:
             raise exceptions.EventNotFound
 
-        if event.status > EventStatus.upcoming:
-            raise exceptions.EventAlreadyIsStarted
+        if event.status != EventStatus.upcoming:
+            raise exceptions.EventIsNotUpcoming
 
         event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.ongoing)
+
+        updated_event = await self.repo.update(event_id=event_id, event=event)
+
+        return EventRead.from_orm(updated_event)
+
+    async def close(self, event_id: int) -> EventRead:
+        event = await self.repo.get_by_id(event_id=event_id)
+
+        if not event:
+            raise exceptions.EventNotFound
+
+        if event.status != EventStatus.ongoing:
+            raise exceptions.EventIsNotOngoing
+
+        event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.closed)
 
         updated_event = await self.repo.update(event_id=event_id, event=event)
 
@@ -67,8 +82,8 @@ class EventService(BaseEventService):
         if not event:
             raise exceptions.EventNotFound
 
-        if event.status != EventStatus.ongoing:
-            raise exceptions.EventIsNotOngoing
+        if event.status != EventStatus.closed:
+            raise exceptions.EventIsNotClosed
 
         for match in event.matches:
             if match.status < MatchStatus.completed:

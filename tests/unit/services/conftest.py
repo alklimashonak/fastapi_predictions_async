@@ -73,11 +73,22 @@ def ongoing_event() -> EventModel:
 
 
 @pytest.fixture
+def closed_event() -> EventModel:
+    return EventModel(
+        id=127,
+        name='event5',
+        status=EventStatus.closed,
+        deadline=datetime.utcnow(),
+        matches=gen_matches(event_id=127, count=5),
+    )
+
+
+@pytest.fixture
 def ready_to_finish_event() -> EventModel:
     return EventModel(
         id=126,
         name='event4',
-        status=EventStatus.ongoing,
+        status=EventStatus.closed,
         deadline=datetime.utcnow(),
         matches=gen_matches(event_id=126, count=5, finished=True),
     )
@@ -166,6 +177,7 @@ def mock_event_repo(
         created_event: EventModel,
         upcoming_event: EventModel,
         ongoing_event: EventModel,
+        closed_event: EventModel,
         ready_to_finish_event: EventModel,
 ) -> BaseEventRepository:
     class MockEventRepository(BaseEventRepository):
@@ -186,6 +198,8 @@ def mock_event_repo(
                 return upcoming_event
             if event_id == ongoing_event.id:
                 return ongoing_event
+            if event_id == closed_event.id:
+                return closed_event
             if event_id == ready_to_finish_event.id:
                 return ready_to_finish_event
             return None
@@ -204,6 +218,11 @@ def mock_event_repo(
                 upcoming_event.status = event.status
                 upcoming_event.deadline = event.deadline
                 return upcoming_event
+            if event_id == ongoing_event.id:
+                ongoing_event.name = event.name
+                ongoing_event.status = event.status
+                ongoing_event.deadline = event.deadline
+                return ongoing_event
             if event_id == ready_to_finish_event.id:
                 ready_to_finish_event.name = event.name
                 ready_to_finish_event.status = event.status

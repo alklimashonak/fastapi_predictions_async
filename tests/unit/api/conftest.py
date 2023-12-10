@@ -112,9 +112,20 @@ def ready_to_finish_event() -> EventModel:
     return EventModel(
         id=126,
         name='event4',
-        status=EventStatus.ongoing,
+        status=EventStatus.closed,
         deadline=datetime.utcnow(),
         matches=gen_matches(event_id=126, count=5, finished=True),
+    )
+
+
+@pytest.fixture(scope='session')
+def closed_event() -> EventModel:
+    return EventModel(
+        id=128,
+        name='event5',
+        status=EventStatus.closed,
+        deadline=datetime.utcnow(),
+        matches=gen_matches(event_id=128, count=5),
     )
 
 
@@ -186,6 +197,9 @@ def fake_get_auth_service(active_user: UserModel, superuser: UserModel):
 
                 return UserRead.from_orm(user)
 
+            async def get_by_email(self, email: str) -> UserRead:
+                pass
+
             async def register(self, new_user: UserCreate) -> UserRead:
                 user = await self._get_by_email(email=new_user.email)
 
@@ -234,10 +248,12 @@ def fake_get_event_service(
         ongoing_event: EventModel,
         ready_to_finish_event: EventModel,
         event_without_matches: EventModel,
+        closed_event: EventModel,
 ):
     def _fake_get_event_service() -> BaseEventService:
         class MockEventService(BaseEventService):
-            events = [created_event, upcoming_event, ongoing_event, ready_to_finish_event, event_without_matches]
+            events = [created_event, upcoming_event, ongoing_event, ready_to_finish_event, event_without_matches,
+                      closed_event]
 
             async def get_multiple(
                     self,
@@ -282,11 +298,24 @@ def fake_get_event_service(
 
                 if event is None:
                     raise exceptions.EventNotFound
-                if event.status > EventStatus.upcoming:
-                    raise exceptions.EventAlreadyIsStarted
+                if event.status != EventStatus.upcoming:
+                    raise exceptions.EventIsNotUpcoming
 
                 event_scheme = EventRead.from_orm(event)
                 event_scheme.status = EventStatus.ongoing
+
+                return event_scheme
+
+            async def close(self, event_id: int) -> EventRead:
+                event = await self._get_by_id(event_id=event_id)
+
+                if event is None:
+                    raise exceptions.EventNotFound
+                if event.status != EventStatus.ongoing:
+                    raise exceptions.EventIsNotOngoing
+
+                event_scheme = EventRead.from_orm(event)
+                event_scheme.status = EventStatus.closed
 
                 return event_scheme
 
@@ -295,8 +324,8 @@ def fake_get_event_service(
 
                 if event is None:
                     raise exceptions.EventNotFound
-                if event.status != EventStatus.ongoing:
-                    raise exceptions.EventIsNotOngoing
+                if event.status != EventStatus.closed:
+                    raise exceptions.EventIsNotClosed
 
                 for match in event.matches:
                     if match.status != MatchStatus.completed:

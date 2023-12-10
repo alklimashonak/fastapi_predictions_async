@@ -13,9 +13,10 @@ class EventStatus(enum.IntEnum):
     created = 0
     upcoming = 1
     ongoing = 2
-    completed = 3
-    archived = 4
-    cancelled = 5
+    closed = 3
+    completed = 4
+    archived = 5
+    cancelled = 6
 
 
 class Event(Base):

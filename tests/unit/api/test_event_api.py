@@ -221,6 +221,47 @@ class TestStartEvent:
 
 
 @pytest.mark.asyncio
+class TestCloseEvent:
+    async def test_missing_token(self, async_client: AsyncClient) -> None:
+        response = await async_client.patch('/events/123/close')
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()['detail'] == 'Not authenticated'
+
+    async def test_active_user_has_not_access(
+            self, async_client: AsyncClient, active_user: UserModel, created_event: EventModel
+    ) -> None:
+        response = await async_client.patch(
+            f'/events/{created_event.id}/close', headers={'Authorization': active_user.email}
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json()['detail'] == "The user doesn't have enough privileges"
+
+    async def test_superuser_has_access(
+            self, async_client: AsyncClient, superuser: UserModel, ongoing_event: EventModel
+    ) -> None:
+        response = await async_client.patch(
+            f'/events/{ongoing_event.id}/close',
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()['status'] == EventStatus.closed
+
+    async def test_event_has_not_ongoing_status(
+            self, async_client: AsyncClient, superuser: UserModel, upcoming_event: EventModel
+    ) -> None:
+        response = await async_client.patch(
+            f'/events/{upcoming_event.id}/close',
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()['detail'] == 'Event should have ongoing status'
+
+
+@pytest.mark.asyncio
 class TestFinishEvent:
     async def test_missing_token(self, async_client: AsyncClient) -> None:
         response = await async_client.patch('/events/123/finish')
@@ -249,7 +290,7 @@ class TestFinishEvent:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()['status'] == EventStatus.completed
 
-    async def test_event_has_not_ongoing_status(
+    async def test_event_has_not_closed_status(
             self, async_client: AsyncClient, superuser: UserModel, upcoming_event: EventModel
     ) -> None:
         response = await async_client.patch(
@@ -258,13 +299,13 @@ class TestFinishEvent:
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.json()['detail'] == 'Event should have ongoing status'
+        assert response.json()['detail'] == 'Event should have closed status'
 
     async def test_event_has_uncompleted_matches(
-            self, async_client: AsyncClient, superuser: UserModel, ongoing_event: EventModel
+            self, async_client: AsyncClient, superuser: UserModel, closed_event: EventModel
     ) -> None:
         response = await async_client.patch(
-            f'/events/{ongoing_event.id}/finish',
+            f'/events/{closed_event.id}/finish',
             headers={'Authorization': superuser.email}
         )
 
