@@ -41,7 +41,7 @@ class MatchService(BaseMatchService):
             raise exceptions.MatchNotFound
 
         if match.status == MatchStatus.completed:
-            raise exceptions.MatchAlreadyIsCompleted
+            raise exceptions.UnexpectedMatchStatus
 
         new_data = MatchUpdate(
             home_team=match.home_team,

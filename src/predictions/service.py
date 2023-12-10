@@ -33,11 +33,8 @@ class PredictionService(BasePredictionService):
         if not match:
             raise exceptions.MatchNotFound
 
-        if match.status == MatchStatus.ongoing:
-            raise exceptions.MatchAlreadyIsRunning
-
-        if match.status == MatchStatus.completed:
-            raise exceptions.MatchAlreadyIsCompleted
+        if match.status != MatchStatus.upcoming:
+            raise exceptions.UnexpectedMatchStatus
 
         if await self.repo.exists_in_db(user_id=user_id, match_id=prediction.match_id):
             raise exceptions.PredictionAlreadyExists
@@ -56,11 +53,8 @@ class PredictionService(BasePredictionService):
         if predict.user_id != user_id:
             raise exceptions.UserIsNotAllowed
 
-        if match.status == MatchStatus.ongoing:
-            raise exceptions.MatchAlreadyIsRunning
-
-        if match.status == MatchStatus.completed:
-            raise exceptions.MatchAlreadyIsCompleted
+        if match.status != MatchStatus.upcoming:
+            raise exceptions.UnexpectedMatchStatus
 
         predict = await self.repo.update(prediction_id=prediction_id, prediction=prediction)
 

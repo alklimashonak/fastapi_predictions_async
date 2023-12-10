@@ -392,7 +392,7 @@ def fake_get_match_service(
                     raise exceptions.MatchNotFound
 
                 if match.status == MatchStatus.completed:
-                    raise exceptions.MatchAlreadyIsCompleted
+                    raise exceptions.UnexpectedMatchStatus
 
                 if match.status == MatchStatus.ongoing:
                     match_scheme = MatchRead.from_orm(match)
@@ -477,11 +477,8 @@ def fake_get_prediction_service(
                 if not match:
                     raise exceptions.MatchNotFound
 
-                if match.status == MatchStatus.ongoing:
-                    raise exceptions.MatchAlreadyIsRunning
-
-                if match.status == MatchStatus.completed:
-                    raise exceptions.MatchAlreadyIsCompleted
+                if match.status != MatchStatus.upcoming:
+                    raise exceptions.UnexpectedMatchStatus
 
                 for predict in self.predictions:
                     if predict.match_id == prediction.match_id and predict.user_id == user_id:
@@ -502,11 +499,8 @@ def fake_get_prediction_service(
                 if match is None:
                     raise exceptions.MatchNotFound
 
-                if match.status == MatchStatus.ongoing:
-                    raise exceptions.MatchAlreadyIsRunning
-
-                if match.status == MatchStatus.completed:
-                    raise exceptions.MatchAlreadyIsCompleted
+                if match.status != MatchStatus.upcoming:
+                    raise exceptions.UnexpectedMatchStatus
 
                 if user_id != predict.user_id:
                     raise exceptions.UserIsNotAllowed

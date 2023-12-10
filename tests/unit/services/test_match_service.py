@@ -103,7 +103,7 @@ class TestFinishMatch:
             match_service: BaseMatchService,
             completed_match: MatchModel,
     ) -> None:
-        with pytest.raises(exceptions.MatchAlreadyIsCompleted):
+        with pytest.raises(exceptions.UnexpectedMatchStatus):
             await match_service.finish(match_id=completed_match.id, home_goals=1, away_goals=1)
 
     async def test_finish_ongoing_match(

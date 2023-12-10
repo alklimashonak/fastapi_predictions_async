@@ -31,7 +31,7 @@ async def create_prediction(
         new_prediction = await prediction_service.create(prediction=prediction, user_id=current_user.id)
     except exceptions.MatchNotFound:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Match not found')
-    except (exceptions.MatchAlreadyIsRunning, exceptions.MatchAlreadyIsCompleted):
+    except exceptions.UnexpectedMatchStatus:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='The match has already started')
     except exceptions.PredictionAlreadyExists:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Prediction for this match already exists')
@@ -53,6 +53,6 @@ async def update_prediction(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Prediction not found')
     except exceptions.UserIsNotAllowed:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can only edit your own predictions')
-    except (exceptions.MatchAlreadyIsRunning, exceptions.MatchAlreadyIsCompleted):
+    except exceptions.UnexpectedMatchStatus:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='The match has already started')
     return prediction

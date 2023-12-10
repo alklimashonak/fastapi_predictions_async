@@ -114,7 +114,7 @@ class TestCreatePrediction:
             match_id=ongoing_match.id,
         )
 
-        with pytest.raises(exceptions.MatchAlreadyIsRunning):
+        with pytest.raises(exceptions.UnexpectedMatchStatus):
             await prediction_service.create(prediction=prediction_data, user_id=superuser.id)
 
     async def test_create_prediction_for_completed_match(
@@ -129,7 +129,7 @@ class TestCreatePrediction:
             match_id=completed_match.id,
         )
 
-        with pytest.raises(exceptions.MatchAlreadyIsCompleted):
+        with pytest.raises(exceptions.UnexpectedMatchStatus):
             await prediction_service.create(prediction=prediction_data, user_id=superuser.id)
 
 
@@ -181,7 +181,7 @@ class TestUpdatePrediction:
             away_goals=0,
         )
 
-        with pytest.raises(exceptions.MatchAlreadyIsRunning):
+        with pytest.raises(exceptions.UnexpectedMatchStatus):
             await prediction_service.update(
                 prediction=prediction_data, prediction_id=prediction1.id, user_id=active_user.id
             )
@@ -200,7 +200,7 @@ class TestUpdatePrediction:
             away_goals=0,
         )
 
-        with pytest.raises(exceptions.MatchAlreadyIsCompleted):
+        with pytest.raises(exceptions.UnexpectedMatchStatus):
             await prediction_service.update(
                 prediction=prediction_data, prediction_id=prediction1.id, user_id=active_user.id
             )
