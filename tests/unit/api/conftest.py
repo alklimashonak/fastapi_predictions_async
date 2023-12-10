@@ -283,8 +283,8 @@ def fake_get_event_service(
 
                 if event is None:
                     raise exceptions.EventNotFound
-                if event.status > EventStatus.created:
-                    raise exceptions.EventAlreadyIsRunning
+                if event.status != EventStatus.created:
+                    raise exceptions.UnexpectedEventStatus
                 if len(event.matches) != 5:
                     raise exceptions.TooFewMatches
 
@@ -299,7 +299,7 @@ def fake_get_event_service(
                 if event is None:
                     raise exceptions.EventNotFound
                 if event.status != EventStatus.upcoming:
-                    raise exceptions.EventIsNotUpcoming
+                    raise exceptions.UnexpectedEventStatus
 
                 event_scheme = EventRead.from_orm(event)
                 event_scheme.status = EventStatus.ongoing
@@ -312,7 +312,7 @@ def fake_get_event_service(
                 if event is None:
                     raise exceptions.EventNotFound
                 if event.status != EventStatus.ongoing:
-                    raise exceptions.EventIsNotOngoing
+                    raise exceptions.UnexpectedEventStatus
 
                 event_scheme = EventRead.from_orm(event)
                 event_scheme.status = EventStatus.closed
@@ -325,7 +325,7 @@ def fake_get_event_service(
                 if event is None:
                     raise exceptions.EventNotFound
                 if event.status != EventStatus.closed:
-                    raise exceptions.EventIsNotClosed
+                    raise exceptions.UnexpectedEventStatus
 
                 for match in event.matches:
                     if match.status != MatchStatus.completed:
@@ -380,7 +380,7 @@ def fake_get_match_service(
                     raise exceptions.EventNotFound
 
                 if event.status > EventStatus.created:
-                    raise exceptions.EventAlreadyIsRunning
+                    raise exceptions.UnexpectedEventStatus
 
                 new_match = MatchModel(**match.dict(), event_id=event_id)
                 return MatchRead.from_orm(new_match)

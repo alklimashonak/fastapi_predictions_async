@@ -34,8 +34,8 @@ class EventService(BaseEventService):
         if not event:
             raise exceptions.EventNotFound
 
-        if event.status > EventStatus.created:
-            raise exceptions.EventAlreadyIsRunning
+        if event.status != EventStatus.created:
+            raise exceptions.UnexpectedEventStatus
 
         if len(event.matches) != 5:
             raise exceptions.TooFewMatches
@@ -53,7 +53,7 @@ class EventService(BaseEventService):
             raise exceptions.EventNotFound
 
         if event.status != EventStatus.upcoming:
-            raise exceptions.EventIsNotUpcoming
+            raise exceptions.UnexpectedEventStatus
 
         event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.ongoing)
 
@@ -68,7 +68,7 @@ class EventService(BaseEventService):
             raise exceptions.EventNotFound
 
         if event.status != EventStatus.ongoing:
-            raise exceptions.EventIsNotOngoing
+            raise exceptions.UnexpectedEventStatus
 
         event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.closed)
 
@@ -83,7 +83,7 @@ class EventService(BaseEventService):
             raise exceptions.EventNotFound
 
         if event.status != EventStatus.closed:
-            raise exceptions.EventIsNotClosed
+            raise exceptions.UnexpectedEventStatus
 
         for match in event.matches:
             if match.status < MatchStatus.completed:

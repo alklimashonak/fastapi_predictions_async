@@ -14,23 +14,7 @@ class EventNotFound(Exception):
     pass
 
 
-class EventAlreadyIsRunning(Exception):
-    pass
-
-
 class TooFewMatches(Exception):
-    pass
-
-
-class EventIsNotUpcoming(Exception):
-    pass
-
-
-class EventIsNotOngoing(Exception):
-    pass
-
-
-class EventIsNotClosed(Exception):
     pass
 
 
@@ -63,4 +47,8 @@ class PredictionAlreadyExists(Exception):
 
 
 class UserIsNotAllowed(Exception):
+    pass
+
+
+class UnexpectedEventStatus(Exception):
     pass

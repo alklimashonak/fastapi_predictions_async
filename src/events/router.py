@@ -59,7 +59,7 @@ async def run_event(
         event = await event_service.run(event_id=event_id)
     except exceptions.EventNotFound:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-    except exceptions.EventAlreadyIsRunning:
+    except exceptions.UnexpectedEventStatus:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event already is running')
     except exceptions.TooFewMatches:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
@@ -80,7 +80,7 @@ async def start_event(
         event = await event_service.start(event_id=event_id)
     except exceptions.EventNotFound:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-    except exceptions.EventIsNotUpcoming:
+    except exceptions.UnexpectedEventStatus:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event already is started')
     return event
 
@@ -99,7 +99,7 @@ async def start_event(
         event = await event_service.close(event_id=event_id)
     except exceptions.EventNotFound:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-    except exceptions.EventIsNotOngoing:
+    except exceptions.UnexpectedEventStatus:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event should have ongoing status')
     return event
 
@@ -118,7 +118,7 @@ async def finish_event(
         event = await event_service.finish(event_id=event_id)
     except exceptions.EventNotFound:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-    except exceptions.EventIsNotClosed:
+    except exceptions.UnexpectedEventStatus:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event should have closed status')
     except exceptions.MatchesAreNotFinished:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='All matches should be finished')

@@ -98,7 +98,7 @@ class TestRunEvent:
             event_service: BaseEventService,
             upcoming_event: EventModel,
     ) -> None:
-        with pytest.raises(exceptions.EventAlreadyIsRunning):
+        with pytest.raises(exceptions.UnexpectedEventStatus):
             await event_service.run(event_id=upcoming_event.id)
 
     async def test_run_created_event_with_matches(
@@ -127,7 +127,7 @@ class TestStartEvent:
             event_service: BaseEventService,
             ongoing_event: EventModel,
     ) -> None:
-        with pytest.raises(exceptions.EventIsNotUpcoming):
+        with pytest.raises(exceptions.UnexpectedEventStatus):
             await event_service.start(event_id=ongoing_event.id)
 
     async def test_start_upcoming_event(
@@ -156,10 +156,10 @@ class TestCloseEvent:
             created_event: EventModel,
             upcoming_event: EventModel,
     ) -> None:
-        with pytest.raises(exceptions.EventIsNotOngoing):
+        with pytest.raises(exceptions.UnexpectedEventStatus):
             await event_service.close(event_id=created_event.id)
 
-        with pytest.raises(exceptions.EventIsNotOngoing):
+        with pytest.raises(exceptions.UnexpectedEventStatus):
             await event_service.close(event_id=upcoming_event.id)
 
     async def test_close_ongoing_event(
@@ -188,10 +188,10 @@ class TestFinishEvent:
             created_event: EventModel,
             upcoming_event: EventModel,
     ) -> None:
-        with pytest.raises(exceptions.EventIsNotClosed):
+        with pytest.raises(exceptions.UnexpectedEventStatus):
             await event_service.finish(event_id=created_event.id)
 
-        with pytest.raises(exceptions.EventIsNotClosed):
+        with pytest.raises(exceptions.UnexpectedEventStatus):
             await event_service.finish(event_id=upcoming_event.id)
 
     async def test_finish_event_that_has_uncompleted_matches(

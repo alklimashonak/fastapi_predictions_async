@@ -26,7 +26,7 @@ async def create_match(
         match = await match_service.create(match=match, event_id=event_id)
     except exceptions.EventNotFound:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-    except exceptions.EventAlreadyIsRunning:
+    except exceptions.UnexpectedEventStatus:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Event already is running',

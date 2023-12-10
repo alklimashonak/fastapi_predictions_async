@@ -48,10 +48,10 @@ class TestCreate:
             start_time=datetime.utcnow(),
         )
 
-        with pytest.raises(exceptions.EventAlreadyIsRunning):
+        with pytest.raises(exceptions.UnexpectedEventStatus):
             await match_service.create(match=match_data, event_id=upcoming_event.id)
 
-        with pytest.raises(exceptions.EventAlreadyIsRunning):
+        with pytest.raises(exceptions.UnexpectedEventStatus):
             await match_service.create(match=match_data, event_id=ongoing_event.id)
 
     async def test_match_successfully_created(
