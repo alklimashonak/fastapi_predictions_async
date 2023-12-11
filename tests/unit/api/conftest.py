@@ -13,6 +13,7 @@ from starlette import status
 from src import exceptions
 from src.auth.base import BaseAuthService
 from src.auth.schemas import UserCreate, UserRead
+from src.core.config import settings
 from src.core.security import get_password_hash, verify_password
 from src.events.base import BaseEventService
 from src.events.models import EventStatus
@@ -344,7 +345,7 @@ def fake_get_match_service(
 ):
     def _fake_get_match_service() -> BaseMatchService:
         class MockMatchService(BaseMatchService):
-            events = [created_event, upcoming_event, ongoing_event, ready_to_finish_event]
+            events = [created_event, upcoming_event, ongoing_event, ready_to_finish_event, event_without_matches]
             matches = [upcoming_match, upcoming_match2, ongoing_match, completed_match]
 
             async def create(self, match: MatchCreate, event_id: int) -> MatchRead:
@@ -353,8 +354,11 @@ def fake_get_match_service(
                 if event is None:
                     raise exceptions.EventNotFound
 
-                if event.status > EventStatus.created:
+                if event.status != EventStatus.created:
                     raise exceptions.UnexpectedEventStatus
+
+                if len(event.matches) == settings.MATCHES_COUNT:
+                    raise exceptions.MatchesLimitError
 
                 new_match = MatchModel(**match.dict(), event_id=event_id)
                 return MatchRead.from_orm(new_match)

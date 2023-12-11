@@ -9,7 +9,7 @@ from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate, MatchRead
 from src.matches.service import MatchService
 from src.predictions.base import BasePredictionRepository
-from tests.utils import EventModel, MatchModel
+from tests.utils import EventModel, MatchModel, gen_matches
 
 
 @pytest.fixture
@@ -53,6 +53,22 @@ class TestCreate:
 
         with pytest.raises(exceptions.UnexpectedEventStatus):
             await match_service.create(match=match_data, event_id=ongoing_event.id)
+
+    async def test_event_already_has_limit_of_matches(
+            self,
+            match_service: BaseMatchService,
+            created_event: EventModel,
+    ) -> None:
+        match_data = MatchCreate(
+            home_team='Home team',
+            away_team='Away team',
+            start_time=datetime.utcnow(),
+        )
+
+        created_event.matches = gen_matches(event_id=created_event.id)
+
+        with pytest.raises(exceptions.MatchesLimitError):
+            await match_service.create(match=match_data, event_id=created_event.id)
 
     async def test_match_successfully_created(
             self,

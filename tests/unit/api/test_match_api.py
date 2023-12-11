@@ -7,6 +7,7 @@ from httpx import AsyncClient
 from starlette import status
 
 from src.auth.dependencies import get_current_user
+from src.core.config import settings
 from src.matches.dependencies import get_match_service
 from src.matches.router import router as match_router
 from tests.utils import EventModel, UserModel, MatchModel
@@ -66,9 +67,9 @@ class TestCreateMatch:
         assert response.json()['detail'] == "The user doesn't have enough privileges"
 
     async def test_superuser_has_access(self, async_client: AsyncClient,
-                                        superuser: UserModel, created_event: EventModel) -> None:
+                                        superuser: UserModel, event_without_matches: EventModel) -> None:
         response = await async_client.post(
-            f'/events/{created_event.id}/matches',
+            f'/events/{event_without_matches.id}/matches',
             json=self.json,
             headers={'Authorization': superuser.email}
         )
@@ -97,6 +98,18 @@ class TestCreateMatch:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json()['detail'] == 'Event already is running'
+
+    async def test_event_already_has_limit_of_matches(
+            self, async_client: AsyncClient, superuser: UserModel, created_event: EventModel
+    ) -> None:
+        response = await async_client.post(
+            f'/events/{created_event.id}/matches',
+            json=self.json,
+            headers={'Authorization': superuser.email}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()['detail'] == f'Event already has {settings.MATCHES_COUNT} matches'
 
     @pytest.mark.skip
     async def test_too_short_team_name_raises_422(self, async_client: AsyncClient,

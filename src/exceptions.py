@@ -34,6 +34,10 @@ class TooFewMatches(Exception):
     pass
 
 
+class MatchesLimitError(Exception):
+    pass
+
+
 class MatchesAreNotFinished(Exception):
     pass
 

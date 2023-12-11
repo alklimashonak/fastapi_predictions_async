@@ -4,6 +4,7 @@ from starlette import status
 
 from src import exceptions
 from src.auth.dependencies import get_current_superuser
+from src.core.config import settings
 from src.matches.base import BaseMatchService
 from src.matches.dependencies import get_match_service
 from src.matches.schemas import MatchRead, MatchCreate
@@ -30,6 +31,11 @@ async def create_match(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Event already is running',
+        )
+    except exceptions.MatchesLimitError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Event already has {settings.MATCHES_COUNT} matches',
         )
     return match
 

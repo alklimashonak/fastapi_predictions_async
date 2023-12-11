@@ -1,4 +1,5 @@
 from src import exceptions
+from src.core.config import settings
 from src.events.base import BaseEventRepository
 from src.events.models import EventStatus
 from src.events.schemas import MatchCreate
@@ -27,6 +28,9 @@ class MatchService(BaseMatchService):
 
         if event.status != EventStatus.created:
             raise exceptions.UnexpectedEventStatus
+
+        if len(event.matches) == settings.MATCHES_COUNT:
+            raise exceptions.MatchesLimitError
 
         new_match = await self.repo.create(match=match, event_id=event_id)
 
