@@ -46,82 +46,25 @@ async def create_event(
 
 
 @router.patch(
-    '/{event_id}/run',
-    response_model=EventRead,
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(get_current_superuser)],
-)
-async def run_event(
-        event_id: int,
-        event_service: BaseEventService = Depends(get_event_service),
-):
-    try:
-        event = await event_service.run(event_id=event_id)
-    except exceptions.EventNotFound:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-    except exceptions.UnexpectedEventStatus:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event already is running')
-    except exceptions.TooFewMatches:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
-    return event
-
-
-@router.patch(
-    '/{event_id}/start',
-    response_model=EventRead,
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(get_current_superuser)],
-)
-async def start_event(
-        event_id: int,
-        event_service: BaseEventService = Depends(get_event_service),
-):
-    try:
-        event = await event_service.start(event_id=event_id)
-    except exceptions.EventNotFound:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-    except exceptions.UnexpectedEventStatus:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event already is started')
-    return event
-
-
-@router.patch(
-    '/{event_id}/close',
-    response_model=EventRead,
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(get_current_superuser)],
-)
-async def start_event(
-        event_id: int,
-        event_service: BaseEventService = Depends(get_event_service),
-):
-    try:
-        event = await event_service.close(event_id=event_id)
-    except exceptions.EventNotFound:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
-    except exceptions.UnexpectedEventStatus:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event should have ongoing status')
-    return event
-
-
-@router.patch(
-    '/{event_id}/finish',
+    '/{event_id}/upgrade',
     response_model=EventRead,
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(get_current_superuser)]
 )
-async def finish_event(
+async def upgrade_event_status(
         event_id: int,
         event_service: BaseEventService = Depends(get_event_service),
 ):
     try:
-        event = await event_service.finish(event_id=event_id)
+        event = await event_service.upgrade_status(event_id=event_id)
     except exceptions.EventNotFound:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
     except exceptions.UnexpectedEventStatus:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event should have closed status')
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event already has finished')
     except exceptions.MatchesAreNotFinished:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='All matches should be finished')
+    except exceptions.TooFewMatches:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
     return event
 
 

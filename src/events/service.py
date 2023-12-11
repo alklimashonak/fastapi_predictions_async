@@ -28,68 +28,25 @@ class EventService(BaseEventService):
 
         return EventRead.from_orm(new_event)
 
-    async def run(self, event_id: int) -> EventRead:
+    async def upgrade_status(self, event_id: int) -> EventRead:
         event = await self.repo.get_by_id(event_id=event_id)
 
         if not event:
             raise exceptions.EventNotFound
 
-        if event.status != EventStatus.created:
+        if event.status == EventStatus.completed:
             raise exceptions.UnexpectedEventStatus
 
-        if len(event.matches) != 5:
-            raise exceptions.TooFewMatches
+        if event.status == EventStatus.closed:
+            for match in event.matches:
+                if match.status != MatchStatus.completed:
+                    raise exceptions.MatchesAreNotFinished
 
-        event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.upcoming)
+        if event.status == EventStatus.created:
+            if len(event.matches) != 5:
+                raise exceptions.TooFewMatches
 
-        updated_event = await self.repo.update(event_id=event_id, event=event)
-
-        return EventRead.from_orm(updated_event)
-
-    async def start(self, event_id: int) -> EventRead:
-        event = await self.repo.get_by_id(event_id=event_id)
-
-        if not event:
-            raise exceptions.EventNotFound
-
-        if event.status != EventStatus.upcoming:
-            raise exceptions.UnexpectedEventStatus
-
-        event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.ongoing)
-
-        updated_event = await self.repo.update(event_id=event_id, event=event)
-
-        return EventRead.from_orm(updated_event)
-
-    async def close(self, event_id: int) -> EventRead:
-        event = await self.repo.get_by_id(event_id=event_id)
-
-        if not event:
-            raise exceptions.EventNotFound
-
-        if event.status != EventStatus.ongoing:
-            raise exceptions.UnexpectedEventStatus
-
-        event = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.closed)
-
-        updated_event = await self.repo.update(event_id=event_id, event=event)
-
-        return EventRead.from_orm(updated_event)
-
-    async def finish(self, event_id: int) -> EventRead:
-        event = await self.repo.get_by_id(event_id=event_id)
-
-        if not event:
-            raise exceptions.EventNotFound
-
-        if event.status != EventStatus.closed:
-            raise exceptions.UnexpectedEventStatus
-
-        for match in event.matches:
-            if match.status != MatchStatus.completed:
-                raise exceptions.MatchesAreNotFinished
-
-        data = EventUpdate(name=event.name, deadline=event.deadline, status=EventStatus.completed)
+        data = EventUpdate(name=event.name, deadline=event.deadline, status=event.status+1)
 
         updated_event = await self.repo.update(event_id=event_id, event=data)
 

@@ -31,16 +31,7 @@ class BaseEventService:
     async def create(self, event: EventCreate) -> EventRead:
         raise NotImplementedError
 
-    async def run(self, event_id: int) -> EventRead:
-        raise NotImplementedError
-
-    async def start(self, event_id: int) -> EventRead:
-        raise NotImplementedError
-
-    async def close(self, event_id: int) -> EventRead:
-        raise NotImplementedError
-
-    async def finish(self, event_id: int) -> EventRead:
+    async def upgrade_status(self, event_id: int) -> EventRead:
         raise NotImplementedError
 
     async def delete(self, event_id: int) -> None:

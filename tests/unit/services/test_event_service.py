@@ -77,137 +77,57 @@ class TestCreateEvent:
 
 
 @pytest.mark.asyncio
-class TestRunEvent:
-    async def test_run_not_existing_event(
-            self,
-            event_service: BaseEventService,
-    ) -> None:
+class TestUpgradeEventStatus:
+    async def test_event_does_not_exist(self, event_service: BaseEventService) -> None:
         with pytest.raises(exceptions.EventNotFound):
-            await event_service.run(event_id=987)
+            await event_service.upgrade_status(event_id=987)
 
-    async def test_event_has_not_5_matches(
-            self,
-            event_service: BaseEventService,
-            created_event: EventModel,
+    async def test_upgrade_completed_event(self, event_service: BaseEventService, completed_event: EventModel) -> None:
+        with pytest.raises(exceptions.UnexpectedEventStatus):
+            await event_service.upgrade_status(event_id=completed_event.id)
+
+    async def test_upgrade_closed_event_that_has_uncompleted_matches(
+            self, event_service: BaseEventService, closed_event: EventModel
+    ) -> None:
+        with pytest.raises(exceptions.MatchesAreNotFinished):
+            await event_service.upgrade_status(event_id=closed_event.id)
+
+    async def test_upgrade_created_event_without_matches(
+            self, event_service: BaseEventService, created_event: EventModel,
     ) -> None:
         with pytest.raises(exceptions.TooFewMatches):
-            await event_service.run(event_id=created_event.id)
+            await event_service.upgrade_status(event_id=created_event.id)
 
-    async def test_run_upcoming_event(
-            self,
-            event_service: BaseEventService,
-            upcoming_event: EventModel,
-    ) -> None:
-        with pytest.raises(exceptions.UnexpectedEventStatus):
-            await event_service.run(event_id=upcoming_event.id)
-
-    async def test_run_created_event_with_matches(
-            self,
-            event_service: BaseEventService,
-            created_event: EventModel,
+    async def test_upgrade_created_event_with_matches(
+            self, event_service: BaseEventService, created_event: EventModel
     ) -> None:
         created_event.matches = gen_matches(event_id=created_event.id, count=5)
-        event = await event_service.run(event_id=created_event.id)
+
+        event = await event_service.upgrade_status(event_id=created_event.id)
 
         assert type(event) == EventRead
         assert event.status == EventStatus.upcoming
 
-
-@pytest.mark.asyncio
-class TestStartEvent:
-    async def test_start_not_existing_event(
-            self,
-            event_service: BaseEventService,
+    async def test_upgrade_upcoming_event(
+            self, event_service: BaseEventService, upcoming_event: EventModel
     ) -> None:
-        with pytest.raises(exceptions.EventNotFound):
-            await event_service.run(event_id=987)
-
-    async def test_start_ongoing_event(
-            self,
-            event_service: BaseEventService,
-            ongoing_event: EventModel,
-    ) -> None:
-        with pytest.raises(exceptions.UnexpectedEventStatus):
-            await event_service.start(event_id=ongoing_event.id)
-
-    async def test_start_upcoming_event(
-            self,
-            event_service: BaseEventService,
-            upcoming_event: EventModel,
-    ) -> None:
-        event = await event_service.start(event_id=upcoming_event.id)
+        event = await event_service.upgrade_status(event_id=upcoming_event.id)
 
         assert type(event) == EventRead
         assert event.status == EventStatus.ongoing
 
-
-@pytest.mark.asyncio
-class TestCloseEvent:
-    async def test_close_not_existing_event(
-            self,
-            event_service: BaseEventService,
+    async def test_upgrade_ongoing_event(
+            self, event_service: BaseEventService, ongoing_event: EventModel
     ) -> None:
-        with pytest.raises(exceptions.EventNotFound):
-            await event_service.close(event_id=987)
-
-    async def test_close_event_that_has_not_status_ongoing(
-            self,
-            event_service: BaseEventService,
-            created_event: EventModel,
-            upcoming_event: EventModel,
-    ) -> None:
-        with pytest.raises(exceptions.UnexpectedEventStatus):
-            await event_service.close(event_id=created_event.id)
-
-        with pytest.raises(exceptions.UnexpectedEventStatus):
-            await event_service.close(event_id=upcoming_event.id)
-
-    async def test_close_ongoing_event(
-            self,
-            event_service: BaseEventService,
-            ongoing_event: EventModel,
-    ) -> None:
-        event = await event_service.close(event_id=ongoing_event.id)
+        event = await event_service.upgrade_status(event_id=ongoing_event.id)
 
         assert type(event) == EventRead
         assert event.status == EventStatus.closed
 
-
-@pytest.mark.asyncio
-class TestFinishEvent:
-    async def test_finish_not_existing_event(
-            self,
-            event_service: BaseEventService,
+    async def test_upgrade_closed_event_with_completed_matches(
+            self, event_service: BaseEventService, ready_to_finish_event: EventModel
     ) -> None:
-        with pytest.raises(exceptions.EventNotFound):
-            await event_service.finish(event_id=987)
-
-    async def test_finish_event_that_has_not_status_closed(
-            self,
-            event_service: BaseEventService,
-            created_event: EventModel,
-            upcoming_event: EventModel,
-    ) -> None:
-        with pytest.raises(exceptions.UnexpectedEventStatus):
-            await event_service.finish(event_id=created_event.id)
-
-        with pytest.raises(exceptions.UnexpectedEventStatus):
-            await event_service.finish(event_id=upcoming_event.id)
-
-    async def test_finish_event_that_has_uncompleted_matches(
-            self,
-            event_service: BaseEventService,
-            closed_event: EventModel,
-    ) -> None:
-        with pytest.raises(exceptions.MatchesAreNotFinished):
-            await event_service.finish(event_id=closed_event.id)
-
-    async def test_finish_closed_event_with_completed_matches(
-            self,
-            event_service: BaseEventService,
-            ready_to_finish_event: EventModel,
-    ) -> None:
-        event = await event_service.finish(event_id=ready_to_finish_event.id)
+        event = await event_service.upgrade_status(event_id=ready_to_finish_event.id)
 
         assert type(event) == EventRead
         assert event.status == EventStatus.completed

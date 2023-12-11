@@ -95,6 +95,17 @@ def ready_to_finish_event() -> EventModel:
 
 
 @pytest.fixture
+def completed_event() -> EventModel:
+    return EventModel(
+        id=128,
+        name='event6',
+        status=EventStatus.completed,
+        deadline=datetime.utcnow(),
+        matches=gen_matches(event_id=128, count=5, finished=True),
+    )
+
+
+@pytest.fixture
 def upcoming_match() -> MatchModel:
     return MatchModel(
         home_team='Chelsea',
@@ -179,6 +190,7 @@ def mock_event_repo(
         ongoing_event: EventModel,
         closed_event: EventModel,
         ready_to_finish_event: EventModel,
+        completed_event: EventModel,
 ) -> BaseEventRepository:
     class MockEventRepository(BaseEventRepository):
         async def get_multiple(
@@ -187,9 +199,9 @@ def mock_event_repo(
                 offset: int = 0, limit: int = 100
         ) -> Sequence[EventModel]:
             if admin_mode is True:
-                return [created_event, upcoming_event, ongoing_event, ready_to_finish_event]
+                return [created_event, upcoming_event, ongoing_event, ready_to_finish_event, completed_event]
             else:
-                return [upcoming_event, ongoing_event, ready_to_finish_event]
+                return [upcoming_event, ongoing_event, ready_to_finish_event, completed_event]
 
         async def get_by_id(self, event_id: int) -> EventModel | None:
             if event_id == created_event.id:
@@ -202,6 +214,8 @@ def mock_event_repo(
                 return closed_event
             if event_id == ready_to_finish_event.id:
                 return ready_to_finish_event
+            if event_id == completed_event.id:
+                return completed_event
             return None
 
         async def create(self, event: EventCreate) -> EventModel:
@@ -228,7 +242,11 @@ def mock_event_repo(
                 ready_to_finish_event.status = event.status
                 ready_to_finish_event.deadline = event.deadline
                 return ready_to_finish_event
-            return None
+            if event_id == completed_event.id:
+                completed_event.name = event.name
+                completed_event.status = event.status
+                completed_event.deadline = event.deadline
+                return ready_to_finish_event
 
         async def delete(self, event_id: int) -> None:
             return None

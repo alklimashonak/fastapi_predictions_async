@@ -122,7 +122,7 @@ def ready_to_finish_event() -> EventModel:
 def closed_event() -> EventModel:
     return EventModel(
         id=128,
-        name='event5',
+        name='event6',
         status=EventStatus.closed,
         deadline=datetime.utcnow(),
         matches=gen_matches(event_id=128, count=5),
@@ -137,6 +137,17 @@ def event_without_matches() -> EventModel:
         status=EventStatus.created,
         deadline=datetime.utcnow(),
         matches=[],
+    )
+
+
+@pytest.fixture(scope='session')
+def completed_event() -> EventModel:
+    return EventModel(
+        id=129,
+        name='event7',
+        status=EventStatus.completed,
+        deadline=datetime.utcnow(),
+        matches=gen_matches(event_id=129, count=5, finished=True),
     )
 
 
@@ -249,11 +260,12 @@ def fake_get_event_service(
         ready_to_finish_event: EventModel,
         event_without_matches: EventModel,
         closed_event: EventModel,
+        completed_event: EventModel,
 ):
     def _fake_get_event_service() -> BaseEventService:
         class MockEventService(BaseEventService):
             events = [created_event, upcoming_event, ongoing_event, ready_to_finish_event, event_without_matches,
-                      closed_event]
+                      closed_event, completed_event]
 
             async def get_multiple(
                     self,
@@ -278,61 +290,23 @@ def fake_get_event_service(
                 new_event = EventModel(**event.dict())
                 return EventRead.from_orm(new_event)
 
-            async def run(self, event_id: int) -> EventRead:
+            async def upgrade_status(self, event_id: int) -> EventRead:
                 event = await self._get_by_id(event_id=event_id)
 
                 if event is None:
                     raise exceptions.EventNotFound
-                if event.status != EventStatus.created:
+                if event.status == EventStatus.completed:
                     raise exceptions.UnexpectedEventStatus
-                if len(event.matches) != 5:
-                    raise exceptions.TooFewMatches
+                if event.status == EventStatus.closed:
+                    for match in event.matches:
+                        if match.status != MatchStatus.completed:
+                            raise exceptions.MatchesAreNotFinished
+                if event.status == EventStatus.created:
+                    if len(event.matches) != 5:
+                        raise exceptions.TooFewMatches
 
                 event_scheme = EventRead.from_orm(event)
-                event_scheme.status = EventStatus.upcoming
-
-                return event_scheme
-
-            async def start(self, event_id: int) -> EventRead:
-                event = await self._get_by_id(event_id=event_id)
-
-                if event is None:
-                    raise exceptions.EventNotFound
-                if event.status != EventStatus.upcoming:
-                    raise exceptions.UnexpectedEventStatus
-
-                event_scheme = EventRead.from_orm(event)
-                event_scheme.status = EventStatus.ongoing
-
-                return event_scheme
-
-            async def close(self, event_id: int) -> EventRead:
-                event = await self._get_by_id(event_id=event_id)
-
-                if event is None:
-                    raise exceptions.EventNotFound
-                if event.status != EventStatus.ongoing:
-                    raise exceptions.UnexpectedEventStatus
-
-                event_scheme = EventRead.from_orm(event)
-                event_scheme.status = EventStatus.closed
-
-                return event_scheme
-
-            async def finish(self, event_id: int) -> EventRead:
-                event = await self._get_by_id(event_id=event_id)
-
-                if event is None:
-                    raise exceptions.EventNotFound
-                if event.status != EventStatus.closed:
-                    raise exceptions.UnexpectedEventStatus
-
-                for match in event.matches:
-                    if match.status != MatchStatus.completed:
-                        raise exceptions.MatchesAreNotFinished
-
-                event_scheme = EventRead.from_orm(event)
-                event_scheme.status = EventStatus.completed
+                event_scheme.status = event.status + 1
 
                 return event_scheme
 
