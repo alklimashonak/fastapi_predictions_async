@@ -1,6 +1,7 @@
 from typing import Sequence
 
 from src import exceptions
+from src.core.config import settings
 from src.events.base import BaseEventService, BaseEventRepository
 from src.events.models import EventStatus
 from src.events.schemas import EventCreate, EventRead, EventUpdate
@@ -43,7 +44,7 @@ class EventService(BaseEventService):
                     raise exceptions.MatchesAreNotFinished
 
         if event.status == EventStatus.created:
-            if len(event.matches) != 5:
+            if len(event.matches) != settings.MATCHES_COUNT:
                 raise exceptions.TooFewMatches
 
         data = EventUpdate(name=event.name, deadline=event.deadline, status=event.status+1)

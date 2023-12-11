@@ -57,7 +57,7 @@ def upcoming_event() -> EventModel:
         name='event2',
         status=EventStatus.upcoming,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=124, count=5),
+        matches=gen_matches(event_id=124),
     )
 
 
@@ -68,7 +68,7 @@ def ongoing_event() -> EventModel:
         name='event3',
         status=EventStatus.ongoing,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=125, count=5),
+        matches=gen_matches(event_id=125),
     )
 
 
@@ -79,7 +79,7 @@ def closed_event() -> EventModel:
         name='event5',
         status=EventStatus.closed,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=127, count=5),
+        matches=gen_matches(event_id=127),
     )
 
 
@@ -90,7 +90,7 @@ def ready_to_finish_event() -> EventModel:
         name='event4',
         status=EventStatus.closed,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=126, count=5, finished=True),
+        matches=gen_matches(event_id=126, finished=True),
     )
 
 
@@ -101,7 +101,7 @@ def completed_event() -> EventModel:
         name='event6',
         status=EventStatus.completed,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=128, count=5, finished=True),
+        matches=gen_matches(event_id=128, finished=True),
     )
 
 

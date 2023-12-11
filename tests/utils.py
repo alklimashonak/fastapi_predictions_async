@@ -4,6 +4,7 @@ from datetime import datetime
 from itertools import count
 from uuid import UUID, uuid4
 
+from src.core.config import settings
 from src.events.models import EventStatus
 from src.matches.models import MatchStatus
 
@@ -78,7 +79,7 @@ def gen_finished_match(event_id: int):
     )
 
 
-def gen_matches(event_id: int, count: int, finished: bool = False):
+def gen_matches(event_id: int, qty: int = settings.MATCHES_COUNT, finished: bool = False):
     if finished:
-        return [gen_finished_match(event_id=event_id) for i in range(count)]
-    return [gen_random_match(event_id=event_id) for i in range(count)]
+        return [gen_finished_match(event_id=event_id) for _ in range(qty)]
+    return [gen_random_match(event_id=event_id) for _ in range(qty)]

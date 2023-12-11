@@ -101,7 +101,7 @@ class TestUpgradeEventStatus:
     async def test_upgrade_created_event_with_matches(
             self, event_service: BaseEventService, created_event: EventModel
     ) -> None:
-        created_event.matches = gen_matches(event_id=created_event.id, count=5)
+        created_event.matches = gen_matches(event_id=created_event.id)
 
         event = await event_service.upgrade_status(event_id=created_event.id)
 

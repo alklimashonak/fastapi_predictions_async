@@ -3,6 +3,7 @@ from starlette import status
 
 from src import exceptions
 from src.auth.dependencies import get_current_superuser
+from src.core.config import settings
 from src.events.base import BaseEventService
 from src.events.dependencies import get_event_service
 from src.events.schemas import EventRead, EventCreate
@@ -64,7 +65,10 @@ async def upgrade_event_status(
     except exceptions.MatchesAreNotFinished:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='All matches should be finished')
     except exceptions.TooFewMatches:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Required min 5 matches')
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Required min {settings.MATCHES_COUNT} matches'
+        )
     return event
 
 

@@ -10,6 +10,8 @@ else:
 
 
 class Settings(BaseSettings):
+    MATCHES_COUNT: int = 5
+
     TESTING: bool = False
 
     SECRET_KEY: str = 'secret'
