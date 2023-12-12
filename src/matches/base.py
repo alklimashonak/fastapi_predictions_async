@@ -10,7 +10,7 @@ class BaseMatchRepository:
     async def get_by_id(self, match_id: int) -> Match | None:
         raise NotImplementedError
 
-    async def update(self, match_id: int, match: MatchUpdate) -> Match:
+    async def update(self, match_id: int, match_data: MatchUpdate) -> Match:
         raise NotImplementedError
 
     async def delete(self, match_id: int) -> None:

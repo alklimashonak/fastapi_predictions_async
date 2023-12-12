@@ -23,8 +23,7 @@ from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate, MatchRead
 from src.predictions.base import BasePredictionService
 from src.predictions.schemas import PredictionCreate, PredictionUpdate, PredictionRead
-from tests.utils import gen_matches, MatchModel, EventModel, UserModel, PredictionModel, user_password, \
-    superuser_password
+from tests.utils import gen_matches, MatchModel, EventModel, UserModel, PredictionModel
 
 
 @pytest.fixture(scope='session')
@@ -155,8 +154,8 @@ def completed_event() -> EventModel:
 @pytest.fixture(scope='session')
 def active_user() -> UserModel:
     return UserModel(
-        email="testuser@example.com",
-        hashed_password=get_password_hash(user_password),
+        email=settings.TEST_USER_EMAIL,
+        hashed_password=get_password_hash(settings.TEST_USER_PASSWORD),
         is_active=True,
         is_superuser=False,
     )
@@ -165,8 +164,8 @@ def active_user() -> UserModel:
 @pytest.fixture(scope='session')
 def superuser() -> UserModel:
     return UserModel(
-        email="testsuperuser@example.com",
-        hashed_password=get_password_hash(superuser_password),
+        email=settings.TEST_SUPERUSER_EMAIL,
+        hashed_password=get_password_hash(settings.TEST_SUPERUSER_PASSWORD),
         is_active=True,
         is_superuser=True,
     )

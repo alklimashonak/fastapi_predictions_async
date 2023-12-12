@@ -42,6 +42,13 @@ class TestGetMultiple:
 
 @pytest.mark.asyncio
 class TestGetByID:
+    async def test_get_not_existing_event(
+            self,
+            event_service: BaseEventService,
+    ) -> None:
+        with pytest.raises(exceptions.EventNotFound):
+            await event_service.get_by_id(event_id=678)
+
     async def test_get_existing_event(
             self,
             event_service: BaseEventService,
@@ -51,17 +58,10 @@ class TestGetByID:
 
         assert event == EventRead.from_orm(created_event)
 
-    async def test_get_not_existing_event(
-            self,
-            event_service: BaseEventService,
-    ) -> None:
-        with pytest.raises(exceptions.EventNotFound):
-            await event_service.get_by_id(event_id=678)
-
 
 @pytest.mark.asyncio
 class TestCreateEvent:
-    async def test_event_has_status_created(
+    async def test_new_event_got_status_created(
             self,
             event_service: BaseEventService,
     ) -> None:

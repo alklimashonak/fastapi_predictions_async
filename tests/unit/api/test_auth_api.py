@@ -8,7 +8,8 @@ from starlette import status
 
 from src.auth.dependencies import get_auth_service
 from src.auth.router import router as auth_router
-from tests.utils import UserModel, user_password
+from src.core.config import settings
+from tests.utils import UserModel
 
 
 @pytest.fixture
@@ -43,7 +44,7 @@ class TestLogin:
         }
         data = {
             'username': active_user.email,
-            'password': user_password,
+            'password': settings.TEST_USER_PASSWORD,
         }
         response = await async_client.post('/auth/login', data=data, headers=headers)
 

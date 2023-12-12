@@ -1,5 +1,4 @@
 import pytest
-from fastapi import HTTPException
 
 from src import exceptions
 from src.matches.base import BaseMatchRepository
@@ -7,7 +6,7 @@ from src.matches.models import MatchStatus
 from src.predictions.base import BasePredictionRepository, BasePredictionService
 from src.predictions.schemas import PredictionRead, PredictionCreate, PredictionUpdate
 from src.predictions.service import PredictionService
-from tests.utils import PredictionModel, UserModel, MatchModel
+from tests.utils import PredictionModel, UserModel, MatchModel, EventModel
 
 
 @pytest.fixture
@@ -42,12 +41,17 @@ class TestGetByID:
 
 @pytest.mark.asyncio
 class TestGetMultipleByEventID:
-    async def test_get_predictions(
+    async def test_get_predictions_works(
             self,
             prediction_service: BasePredictionService,
             active_user: UserModel,
+            prediction1: PredictionModel,
+            upcoming_event: EventModel,
     ) -> None:
-        predictions = await prediction_service.get_multiple_by_event_id(event_id=123, user_id=active_user.id)
+        predictions = await prediction_service.get_multiple_by_event_id(
+            event_id=upcoming_event.id,
+            user_id=active_user.id
+        )
 
         assert len(predictions) > 0
         assert type(predictions[0]) == PredictionRead

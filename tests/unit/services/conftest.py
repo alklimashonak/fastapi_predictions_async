@@ -6,6 +6,7 @@ import pytest
 
 from src.auth.base import BaseAuthRepository
 from src.auth.schemas import UserCreate
+from src.core.config import settings
 from src.core.security import get_password_hash
 from src.events.base import BaseEventRepository
 from src.events.models import EventStatus
@@ -15,15 +16,14 @@ from src.matches.models import MatchStatus
 from src.matches.schemas import MatchCreate, MatchUpdate, MatchRead
 from src.predictions.base import BasePredictionRepository
 from src.predictions.schemas import PredictionCreate, PredictionUpdate
-from tests.utils import EventModel, gen_matches, UserModel, user_password, superuser_password, MatchModel, \
-    PredictionModel
+from tests.utils import EventModel, gen_matches, UserModel, MatchModel, PredictionModel
 
 
 @pytest.fixture(scope='session')
 def active_user() -> UserModel:
     return UserModel(
-        email="testuser@example.com",
-        hashed_password=get_password_hash(user_password),
+        email=settings.TEST_USER_EMAIL,
+        hashed_password=get_password_hash(settings.TEST_USER_PASSWORD),
         is_active=True,
         is_superuser=False,
     )
@@ -32,8 +32,8 @@ def active_user() -> UserModel:
 @pytest.fixture(scope='session')
 def superuser() -> UserModel:
     return UserModel(
-        email="testsuperuser@example.com",
-        hashed_password=get_password_hash(superuser_password),
+        email=settings.TEST_SUPERUSER_EMAIL,
+        hashed_password=get_password_hash(settings.TEST_SUPERUSER_PASSWORD),
         is_active=True,
         is_superuser=True,
     )
@@ -42,7 +42,7 @@ def superuser() -> UserModel:
 @pytest.fixture
 def created_event() -> EventModel:
     return EventModel(
-        id=123,
+        id=1,
         name='event1',
         status=EventStatus.created,
         deadline=datetime.utcnow(),
@@ -53,55 +53,55 @@ def created_event() -> EventModel:
 @pytest.fixture
 def upcoming_event() -> EventModel:
     return EventModel(
-        id=124,
+        id=2,
         name='event2',
         status=EventStatus.upcoming,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=124),
+        matches=gen_matches(event_id=2),
     )
 
 
 @pytest.fixture
 def ongoing_event() -> EventModel:
     return EventModel(
-        id=125,
+        id=3,
         name='event3',
         status=EventStatus.ongoing,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=125),
+        matches=gen_matches(event_id=3),
     )
 
 
 @pytest.fixture
 def closed_event() -> EventModel:
     return EventModel(
-        id=127,
-        name='event5',
+        id=4,
+        name='event4',
         status=EventStatus.closed,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=127),
+        matches=gen_matches(event_id=4),
     )
 
 
 @pytest.fixture
 def ready_to_finish_event() -> EventModel:
     return EventModel(
-        id=126,
-        name='event4',
+        id=5,
+        name='event5',
         status=EventStatus.closed,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=126, finished=True),
+        matches=gen_matches(event_id=5, finished=True),
     )
 
 
 @pytest.fixture
 def completed_event() -> EventModel:
     return EventModel(
-        id=128,
+        id=6,
         name='event6',
         status=EventStatus.completed,
         deadline=datetime.utcnow(),
-        matches=gen_matches(event_id=128, finished=True),
+        matches=gen_matches(event_id=6, finished=True),
     )
 
 
@@ -112,7 +112,7 @@ def upcoming_match() -> MatchModel:
         away_team='Man City',
         start_time=datetime.utcnow(),
         status=MatchStatus.upcoming,
-        event_id=123,
+        event_id=2,
     )
 
 
@@ -123,7 +123,7 @@ def ongoing_match() -> MatchModel:
         away_team='Barcelona',
         start_time=datetime.utcnow(),
         status=MatchStatus.ongoing,
-        event_id=123,
+        event_id=4,
     )
 
 
@@ -134,7 +134,7 @@ def completed_match() -> MatchModel:
         away_team='Liverpool',
         start_time=datetime.utcnow(),
         status=MatchStatus.completed,
-        event_id=123,
+        event_id=4,
     )
 
 
@@ -193,63 +193,45 @@ def mock_event_repo(
         completed_event: EventModel,
 ) -> BaseEventRepository:
     class MockEventRepository(BaseEventRepository):
+        events = [created_event, upcoming_event, ongoing_event, closed_event, ready_to_finish_event, completed_event]
+
         async def get_multiple(
                 self,
                 admin_mode: bool = False,
                 offset: int = 0, limit: int = 100
         ) -> Sequence[EventModel]:
             if admin_mode is True:
-                return [created_event, upcoming_event, ongoing_event, ready_to_finish_event, completed_event]
+                return self.events
             else:
-                return [upcoming_event, ongoing_event, ready_to_finish_event, completed_event]
+                return [event for event in self.events if event.status != EventStatus.created]
 
         async def get_by_id(self, event_id: int) -> EventModel | None:
-            if event_id == created_event.id:
-                return created_event
-            if event_id == upcoming_event.id:
-                return upcoming_event
-            if event_id == ongoing_event.id:
-                return ongoing_event
-            if event_id == closed_event.id:
-                return closed_event
-            if event_id == ready_to_finish_event.id:
-                return ready_to_finish_event
-            if event_id == completed_event.id:
-                return completed_event
-            return None
+            return await self._get_by_id(event_id=event_id)
 
         async def create(self, event: EventCreate) -> EventModel:
             return EventModel(**event.dict())
 
-        async def update(self, event_id: int, event: EventUpdate) -> EventModel | None:
-            if event_id == created_event.id:
-                created_event.name = event.name
-                created_event.status = event.status
-                created_event.deadline = event.deadline
-                return created_event
-            if event_id == upcoming_event.id:
-                upcoming_event.name = event.name
-                upcoming_event.status = event.status
-                upcoming_event.deadline = event.deadline
-                return upcoming_event
-            if event_id == ongoing_event.id:
-                ongoing_event.name = event.name
-                ongoing_event.status = event.status
-                ongoing_event.deadline = event.deadline
-                return ongoing_event
-            if event_id == ready_to_finish_event.id:
-                ready_to_finish_event.name = event.name
-                ready_to_finish_event.status = event.status
-                ready_to_finish_event.deadline = event.deadline
-                return ready_to_finish_event
-            if event_id == completed_event.id:
-                completed_event.name = event.name
-                completed_event.status = event.status
-                completed_event.deadline = event.deadline
-                return ready_to_finish_event
+        async def update(self, event_id: int, event_data: EventUpdate) -> EventModel | None:
+            event = await self._get_by_id(event_id=event_id)
+
+            if event is None:
+                return None
+
+            event.name = event_data.name
+            event.status = event_data.status
+            event.deadline = event_data.status
+
+            return event
 
         async def delete(self, event_id: int) -> None:
             return None
+
+        async def _get_by_id(self, event_id: int) -> EventModel | None:
+            for event in self.events:
+                if event.id == event_id:
+                    return event
+            else:
+                return None
 
     yield MockEventRepository()
 
@@ -261,72 +243,94 @@ def mock_match_repo(
         completed_match: MatchModel,
 ) -> BaseMatchRepository:
     class MockMatchRepository(BaseMatchRepository):
+        matches = [upcoming_match, ongoing_match, completed_match]
+
         async def create(self, match: MatchCreate, event_id: int) -> MatchModel:
             return MatchModel(**match.dict(), event_id=event_id)
 
         async def get_by_id(self, match_id: int) -> MatchModel | None:
-            if match_id == upcoming_match.id:
-                return upcoming_match
-            if match_id == ongoing_match.id:
-                return ongoing_match
-            if match_id == completed_match.id:
-                return completed_match
-            return None
+            return await self._get_by_id(match_id=match_id)
 
-        async def update(self, match_id: int, match: MatchUpdate) -> MatchModel:
-            if match_id == ongoing_match.id:
-                ongoing_match.home_team = match.home_team
-                ongoing_match.away_team = match.away_team
-                ongoing_match.start_time = match.start_time
-                ongoing_match.status = match.status
-                ongoing_match.home_goals = match.home_goals
-                ongoing_match.away_goals = match.away_goals
-                return ongoing_match
-            if match_id == upcoming_match.id:
-                upcoming_match.home_team = match.home_team
-                upcoming_match.away_team = match.away_team
-                upcoming_match.start_time = match.start_time
-                upcoming_match.status = match.status
-                upcoming_match.home_goals = match.home_goals
-                upcoming_match.away_goals = match.away_goals
-                return upcoming_match
+        async def update(self, match_id: int, match_data: MatchUpdate) -> MatchModel | None:
+            match = await self._get_by_id(match_id=match_id)
+
+            if match is None:
+                return None
+
+            match.home_team = match_data.home_team
+            match.away_team = match_data.away_team
+            match.start_time = match_data.start_time
+            match.status = match_data.status
+            match.home_goals = match_data.home_goals
+            match.away_goals = match_data.away_goals
+
+            return match
 
         async def delete(self, match_id: int) -> None:
             return None
+
+        async def _get_by_id(self, match_id: int) -> MatchModel | None:
+            for match in self.matches:
+                if match.id == match_id:
+                    return match
+            else:
+                return None
 
     yield MockMatchRepository()
 
 
 @pytest.fixture
-def mock_prediction_repo(prediction1: PredictionModel) -> BasePredictionRepository:
+def mock_prediction_repo(prediction1: PredictionModel, upcoming_match: MatchModel) -> BasePredictionRepository:
     class MockPredictionRepository(BasePredictionRepository):
+        predictions = [prediction1]
+
         async def get_multiple_by_event_id(self, event_id: int, user_id: UUID) -> list[PredictionModel]:
-            return [prediction1]
+            predictions = []
+
+            for prediction in self.predictions:
+                if all(
+                        (
+                                prediction.match_id == upcoming_match.id,
+                                prediction.user_id == user_id,
+                                upcoming_match.event_id == event_id,
+                        ),
+                ):
+                    predictions.append(prediction)
+
+            return predictions
 
         async def get_by_id(self, prediction_id: int) -> PredictionModel | None:
-            if prediction_id == prediction1.id:
-                return prediction1
-            return None
+            return await self._get_by_id(prediction_id=prediction_id)
 
         async def create(self, prediction: PredictionCreate, user_id: UUID) -> PredictionModel:
             return PredictionModel(**prediction.dict(), user_id=user_id)
 
-        async def update(self, prediction_id: int, prediction: PredictionUpdate) -> PredictionModel | None:
-            if prediction_id == prediction1.id:
-                return PredictionModel(
-                    id=prediction1.id,
-                    home_goals=prediction.home_goals,
-                    away_goals=prediction.away_goals,
-                    user_id=prediction1.user_id,
-                    match_id=prediction1.match_id,
-                )
+        async def update(self, prediction_id: int, prediction_data: PredictionUpdate) -> PredictionModel | None:
+            prediction = await self._get_by_id(prediction_id=prediction_id)
+
+            if prediction is None:
+                return None
+
+            prediction.home_goals = prediction_data.home_goals
+            prediction.away_goals = prediction_data.away_goals
+
+            return prediction
 
         async def exists_in_db(self, user_id: UUID, match_id: int) -> bool:
-            if user_id == prediction1.user_id and match_id == prediction1.match_id:
-                return True
-            return False
+            for prediction in self.predictions:
+                if prediction.user_id == user_id and prediction.match_id == match_id:
+                    return True
+            else:
+                return False
 
         async def update_points_for_match(self, match: MatchRead) -> None:
             pass
+
+        async def _get_by_id(self, prediction_id: int) -> PredictionModel | None:
+            for prediction in self.predictions:
+                if prediction.id == prediction_id:
+                    return prediction
+            else:
+                return None
 
     yield MockPredictionRepository()

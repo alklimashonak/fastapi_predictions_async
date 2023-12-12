@@ -9,10 +9,6 @@ from src.events.models import EventStatus
 from src.matches.models import MatchStatus
 
 
-user_password = 'user'
-superuser_password = 'admin'
-
-
 @dataclasses.dataclass
 class UserModel:
     email: str

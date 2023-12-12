@@ -8,7 +8,8 @@ from src import exceptions
 from src.auth.base import BaseAuthRepository, BaseAuthService
 from src.auth.schemas import UserRead, UserCreate
 from src.auth.service import AuthService
-from tests.utils import UserModel, user_password
+from src.core.config import settings
+from tests.utils import UserModel
 
 
 @pytest.fixture
@@ -18,7 +19,7 @@ def auth_service(mock_auth_repo: BaseAuthRepository) -> BaseAuthService:
 
 @pytest.mark.asyncio
 class TestGetMultiple:
-    async def test_get_multiple_users(
+    async def test_get_multiple_users_works(
             self,
             auth_service: BaseAuthService,
             active_user: UserModel,
@@ -103,6 +104,6 @@ class TestLogin:
             auth_service: BaseAuthService,
             active_user: UserModel,
     ) -> None:
-        user = await auth_service.login(email=active_user.email, password=user_password)
+        user = await auth_service.login(email=active_user.email, password=settings.TEST_USER_PASSWORD)
 
         assert UserRead.from_orm(active_user) == user

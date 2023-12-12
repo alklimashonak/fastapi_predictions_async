@@ -49,7 +49,7 @@ class EventService(BaseEventService):
 
         data = EventUpdate(name=event.name, deadline=event.deadline, status=event.status+1)
 
-        updated_event = await self.repo.update(event_id=event_id, event=data)
+        updated_event = await self.repo.update(event_id=event_id, event_data=data)
 
         return EventRead.from_orm(updated_event)
 

@@ -14,7 +14,7 @@ class BaseEventRepository:
     async def create(self, event: EventCreate) -> Event:
         raise NotImplementedError
 
-    async def update(self, event_id: int, event: EventUpdate) -> Event:
+    async def update(self, event_id: int, event_data: EventUpdate) -> Event:
         raise NotImplementedError
 
     async def delete(self, event_id: int) -> None:

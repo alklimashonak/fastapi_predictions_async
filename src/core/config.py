@@ -47,7 +47,9 @@ class Settings(BaseSettings):
         )
 
     TEST_USER_EMAIL: EmailStr = 'testuser@example.com'
-    TEST_USER_PASSWORD: str = '1234'
+    TEST_USER_PASSWORD: str = 'user'
+    TEST_SUPERUSER_EMAIL: EmailStr = 'testsuperuser@example.com'
+    TEST_SUPERUSER_PASSWORD: str = 'admin'
 
     class Config:
         env_file = '.env'

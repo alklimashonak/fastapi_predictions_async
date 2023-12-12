@@ -30,6 +30,7 @@ class PredictionService(BasePredictionService):
 
     async def create(self, prediction: PredictionCreate, user_id: UUID) -> PredictionRead:
         match = await self.match_repo.get_by_id(match_id=prediction.match_id)
+
         if not match:
             raise exceptions.MatchNotFound
 
@@ -56,6 +57,6 @@ class PredictionService(BasePredictionService):
         if match.status != MatchStatus.upcoming:
             raise exceptions.UnexpectedMatchStatus
 
-        predict = await self.repo.update(prediction_id=prediction_id, prediction=prediction)
+        predict = await self.repo.update(prediction_id=prediction_id, prediction_data=prediction)
 
         return PredictionRead.from_orm(predict)

@@ -56,7 +56,7 @@ class MatchService(BaseMatchService):
             status=MatchStatus.completed,
         )
 
-        updated_match = await self.repo.update(match_id=match_id, match=new_data)
+        updated_match = await self.repo.update(match_id=match_id, match_data=new_data)
 
         await self.prediction_repo.update_points_for_match(match=updated_match)
 
